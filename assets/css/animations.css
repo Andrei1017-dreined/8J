@@ -1,0 +1,251 @@
+/**
+ * 8J Cellphone & Accessories IMS
+ * Award-Winning UI Transitions & Animation Framework
+ * Designed with modern micro-interactions & cubic-bezier easing
+ */
+
+:root {
+    --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+    --ease-in-out-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+    --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+    --ease-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+/* 1. Global Smooth Scrolling & Sleek Scrollbars */
+html {
+    scroll-behavior: smooth;
+}
+
+::-webkit-scrollbar {
+    width: 7px;
+    height: 7px;
+}
+::-webkit-scrollbar-track {
+    background: #f4f4f5;
+}
+::-webkit-scrollbar-thumb {
+    background: #a1a1aa;
+    border-radius: 9999px;
+}
+::-webkit-scrollbar-thumb:hover {
+    background: #71717a;
+}
+
+/* 2. Glassmorphism Top Navigation */
+.navbar-custom {
+    backdrop-filter: blur(16px) saturate(180%) !important;
+    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+    background-color: rgba(255, 255, 255, 0.85) !important;
+    border-bottom: 1px solid rgba(228, 228, 231, 0.8) !important;
+    transition: background-color 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo);
+}
+.navbar-custom.scrolled {
+    background-color: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 3. Page Staggered Entry Animations */
+@keyframes revealUp {
+    from {
+        opacity: 0;
+        transform: translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes revealFade {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes revealScale {
+    from {
+        opacity: 0;
+        transform: scale(0.96) translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.animate-reveal {
+    animation: revealUp 0.65s var(--ease-out-expo) both;
+}
+
+.animate-fade {
+    animation: revealFade 0.5s ease both;
+}
+
+.animate-scale {
+    animation: revealScale 0.55s var(--ease-out-expo) both;
+}
+
+/* Stagger Delays for Grids and Rows */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.12s; }
+.stagger-3 { animation-delay: 0.18s; }
+.stagger-4 { animation-delay: 0.25s; }
+.stagger-5 { animation-delay: 0.32s; }
+
+/* 4. Fluid Card Elevation & Hover Physics */
+.card-custom, .stat-card {
+    transition: transform 0.4s var(--ease-out-expo), 
+                box-shadow 0.4s var(--ease-out-expo), 
+                border-color 0.3s var(--ease-out-expo) !important;
+    will-change: transform, box-shadow;
+}
+
+.card-custom:hover, .stat-card:hover {
+    transform: translateY(-5px) !important;
+    box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.09) !important;
+    border-color: #27272a !important;
+}
+
+/* 5. Tactile Button Press Physics (Apple / Linear style) */
+.btn {
+    transition: transform 0.18s var(--ease-out-expo), 
+                box-shadow 0.2s var(--ease-out-expo), 
+                background-color 0.2s ease, 
+                border-color 0.2s ease !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.btn:active {
+    transform: scale(0.96) !important;
+}
+
+.btn-primary:hover {
+    box-shadow: 0 8px 20px -4px rgba(9, 9, 11, 0.35) !important;
+}
+
+/* 6. Interactive Pill & Chip Micro-Interactions (Apple / Linear Design) */
+.brand-pill, .model-chip, .issue-badge {
+    transition: background-color 0.18s var(--ease-out-expo),
+                border-color 0.18s var(--ease-out-expo),
+                color 0.18s var(--ease-out-expo),
+                box-shadow 0.18s var(--ease-out-expo),
+                transform 0.12s ease !important;
+    position: relative;
+    user-select: none;
+}
+
+.brand-pill:hover, .issue-badge:hover {
+    transform: translateY(-1px) !important;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.brand-pill:active, .issue-badge:active {
+    transform: scale(0.97) !important;
+}
+
+.brand-pill.active, .issue-badge.selected {
+    transform: translateY(0) !important;
+    background-color: #09090b !important;
+    color: #ffffff !important;
+    border-color: #09090b !important;
+    box-shadow: 0 3px 10px -2px rgba(9, 9, 11, 0.25) !important;
+}
+
+.issue-badge i {
+    transition: color 0.18s ease;
+}
+
+.issue-badge.selected i {
+    color: #ffffff !important;
+}
+
+/* 7. Cart Counter Elastic Bounce */
+@keyframes cartBounce {
+    0% { transform: scale(0.8); }
+    40% { transform: scale(1.35) rotate(-6deg); }
+    70% { transform: scale(0.95) rotate(3deg); }
+    100% { transform: scale(1) rotate(0deg); }
+}
+
+.badge-bounce {
+    animation: cartBounce 0.45s var(--ease-spring) both;
+}
+
+/* 8. Pulsing Status Indicator Dots */
+.pulse-indicator {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    margin-right: 6px;
+    position: relative;
+    vertical-align: middle;
+}
+.pulse-indicator.green {
+    background-color: #10b981;
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    animation: pulseDotGreen 2s infinite;
+}
+.pulse-indicator.orange {
+    background-color: #f59e0b;
+    box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6);
+    animation: pulseDotOrange 2s infinite;
+}
+
+@keyframes pulseDotGreen {
+    0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
+    70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+}
+
+@keyframes pulseDotOrange {
+    0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
+    70% { box-shadow: 0 0 0 7px rgba(245, 158, 11, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
+}
+
+/* 9. Floating Hero Device & Badge Physics */
+@keyframes floatSubtle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-7px); }
+}
+.animate-float {
+    animation: floatSubtle 4s ease-in-out infinite;
+}
+
+/* 10. Form Control Focus Glow */
+.form-control, .form-select {
+    transition: border-color 0.25s var(--ease-out-expo), 
+                box-shadow 0.25s var(--ease-out-expo), 
+                transform 0.2s var(--ease-out-expo) !important;
+}
+.form-control:focus, .form-select:focus {
+    border-color: #09090b !important;
+    box-shadow: 0 0 0 3.5px rgba(9, 9, 11, 0.08) !important;
+    transform: translateY(-1px);
+}
+
+/* 11. Modal Window Spring Scale-In */
+.modal.fade .modal-dialog {
+    transform: scale(0.92) translateY(20px);
+    transition: transform 0.4s var(--ease-out-expo), opacity 0.3s ease;
+    opacity: 0;
+}
+.modal.show .modal-dialog {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+}
+
+/* 12. Respect User Motion Preferences */
+@media (prefers-reduced-motion: reduce) {
+    *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
+}
