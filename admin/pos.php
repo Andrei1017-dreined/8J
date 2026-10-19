@@ -35,8 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $invoice_no = '8J-INV-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
 
             // 1. Insert into sales
+            $cashier_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
             $stmt = $pdo->prepare("INSERT INTO sales (invoice_no, customer_name, subtotal, discount_amount, total_amount, amount_tendered, change_due, payment_method, cashier_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$invoice_no, $customer_name, $subtotal, $discount, $total_amount, $amount_tendered, $change_due, $payment_method, $current_user['id']]);
+            $stmt->execute([$invoice_no, $customer_name, $subtotal, $discount, $total_amount, $amount_tendered, $change_due, $payment_method, $cashier_id]);
             $sale_id = $pdo->lastInsertId();
 
             // 2. Insert items and update stock

@@ -65,10 +65,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             (customer_name, contact_number, brand, model_name, storage_capacity, imei, cosmetic_grade, screen_condition, battery_health, face_or_fingerprint_working, cameras_working, speakers_mic_working, icloud_google_clean, initial_market_val, total_deductions, final_appraised_value, technician_id, remarks)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         
+        $technician_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
         $ins->execute([
             $customer_name, $contact_number, $mat['brand'], $mat['model_name'], $mat['storage_capacity'], $imei,
             $cosmetic_grade, $screen_condition, $battery_health, $biometrics_ok, $cameras_ok, $speakers_ok, $icloud_clean,
-            $base_val, $deductions, $final_val, $current_user['id'], $remarks
+            $base_val, $deductions, $final_val, $technician_id, $remarks
         ]);
 
         $saved_id = $pdo->lastInsertId();

@@ -69,6 +69,9 @@ function get_current_user_data() {
     return $_SESSION['user'] ?? null;
 }
 
+// Global variable for current authenticated user across all scripts and handlers
+$current_user = get_current_user_data();
+
 function is_logged_in() {
     return isset($_SESSION['user']);
 }

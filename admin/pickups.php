@@ -21,8 +21,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
         $order = $chk->fetch();
 
         if ($order && strtoupper($order['claim_verification_code']) === strtoupper($entered_code)) {
+            $staff_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
             $stmt = $pdo->prepare("UPDATE online_orders SET pickup_status = 'claimed', claimed_at = NOW(), handled_by_staff_id = ? WHERE id = ?");
-            $stmt->execute([$current_user['id'], $order_id]);
+            $stmt->execute([$staff_id, $order_id]);
             $message = "Success: Claim code verified! Order has been released to customer.";
         } else {
             $message = "Error: Invalid claim verification code! Please check the customer's pickup claim ticket.";

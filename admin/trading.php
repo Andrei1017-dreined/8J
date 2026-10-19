@@ -68,15 +68,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 (trade_code, customer_name, customer_contact, trade_in_appraisal_id, incoming_unit_id, outgoing_unit_id, appraised_trade_value, target_unit_price, top_up_difference, cash_received_from_customer, cash_paid_to_customer, handled_by_staff_id, remarks)
                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
             
+            $staff_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
             $ins_trade->execute([
                 $trade_code, $app['customer_name'], $app['contact_number'], $appraisal_id,
                 $incoming_unit_id, $outgoing_unit_id, $trade_val, $target_price, $top_up_diff,
-                $cash_received, $cash_paid_out, $current_user['id'], $remarks
+                $cash_received, $cash_paid_out, $staff_id, $remarks
             ]);
 
             // 7. Audit Log
             $log = $pdo->prepare("INSERT INTO audit_logs (user_id, action, module, details) VALUES (?, 'Completed Phone Trade', 'Trading', ?)");
-            $log->execute([$current_user['id'], "Trade {$trade_code}: {$shop_unit['model_name']} swapped with {$app['model_name']}"]);
+            $log->execute([$staff_id, "Trade {$trade_code}: {$shop_unit['model_name']} swapped with {$app['model_name']}"]);
 
             $pdo->commit();
             $message = "Phone trade completed successfully! Transaction Reference: " . $trade_code;

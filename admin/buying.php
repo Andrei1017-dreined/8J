@@ -59,14 +59,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                     (transaction_no, seller_name, seller_contact, seller_address, valid_id_type, valid_id_number, appraisal_record_id, phone_unit_id, amount_paid, payment_method, anti_fencing_declaration_agreed, handled_by_staff_id)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
                 
+                $staff_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
                 $ins_buyout->execute([
                     $trans_no, $seller_name, $seller_contact, $seller_address, $valid_id_type, $valid_id_number,
-                    $appraisal_id, $phone_unit_id, $amount_paid, $payment_method, 1, $current_user['id']
+                    $appraisal_id, $phone_unit_id, $amount_paid, $payment_method, 1, $staff_id
                 ]);
 
                 // 5. Audit log
                 $log = $pdo->prepare("INSERT INTO audit_logs (user_id, action, module, details) VALUES (?, 'Completed Unit Buyout', 'Buying', ?)");
-                $log->execute([$current_user['id'], "Buyout {$trans_no}: Purchased {$app['brand']} {$app['model_name']} for {$amount_paid}"]);
+                $log->execute([$staff_id, "Buyout {$trans_no}: Purchased {$app['brand']} {$app['model_name']} for {$amount_paid}"]);
 
                 $pdo->commit();
                 $message = "Unit buyout processed successfully! Transaction No: " . $trans_no . ". Phone is now in stock.";
