@@ -58,7 +58,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $deductions += (float)$mat['camera_issue_deduction'];
         }
 
-        $final_val = max(1000.00, $graded_value - $deductions);
+        // Staff determines and sets the final appraisal valuation
+        $staff_entered_val = (float)($_POST['final_appraised_value'] ?? 0);
+        $benchmark_val = max(500.00, $graded_value - $deductions);
+        $final_val = ($staff_entered_val > 0) ? $staff_entered_val : $benchmark_val;
 
         // Insert appraisal record
         $ins = $pdo->prepare("INSERT INTO appraisal_records 
@@ -73,7 +76,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         ]);
 
         $saved_id = $pdo->lastInsertId();
-        $message = "Appraisal recorded successfully! Appraised Valuation: " . format_currency($final_val);
+        $message = "Staff appraisal recorded successfully! Official Valuation: " . format_currency($final_val) . " (Evaluated by: " . htmlspecialchars($current_user['fullname']) . ")";
         $appraisal_result = [
             'id' => $saved_id,
             'customer_name' => $customer_name,
@@ -99,8 +102,13 @@ require_once __DIR__ . '/../includes/header.php';
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
             <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
                 <div>
-                    <h2 class="h3 fw-bold mb-1"><i class="fa-solid fa-calculator text-primary me-2"></i>Smartphone Appraisal Calculator</h2>
-                    <p class="text-muted small mb-0">Evaluate cosmetic, screen, battery & hardware condition to determine fair trade-in and buying value</p>
+                    <h2 class="h3 fw-bold mb-1"><i class="fa-solid fa-clipboard-user text-primary me-2"></i>Smartphone Inspection & Staff Appraisal Desk</h2>
+                    <p class="text-muted small mb-0">Conduct physical hardware inspection and establish the official staff trade-in or buyout cash offer</p>
+                </div>
+                <div>
+                    <span class="badge bg-dark text-white border p-2">
+                        <i class="fa-solid fa-user-check text-success me-1"></i> Appraiser: <strong><?= htmlspecialchars($current_user['fullname']) ?></strong> (<?= ucfirst($current_user['role']) ?>)
+                    </span>
                 </div>
             </div>
 
@@ -235,13 +243,43 @@ require_once __DIR__ . '/../includes/header.php';
                                 </div>
                             </div>
 
-                            <div class="mb-3">
-                                <label class="form-label small fw-semibold">Technician Observations & Remarks</label>
-                                <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. 3Utools test score 98%, original housing"></textarea>
+                            <!-- Staff Appraisal Valuation Entry -->
+                            <div class="card p-3 mb-3 border-2 border-dark rounded-3 bg-white shadow-xs">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <label class="form-label small fw-bold text-dark text-uppercase mb-0">
+                                        <i class="fa-solid fa-hand-holding-dollar text-primary me-1"></i> Staff Appraised Offer (₱)
+                                    </label>
+                                    <span class="badge bg-dark text-white rounded-pill px-2.5 py-1" style="font-size:0.7rem;">
+                                        <i class="fa-solid fa-user-pen me-1"></i> Manual Staff Valuation
+                                    </span>
+                                </div>
+                                <div class="input-group input-group-lg mb-2">
+                                    <span class="input-group-text bg-dark text-white fw-bold">₱</span>
+                                    <input type="number" step="50" min="500" name="final_appraised_value" id="finalAppraisedValue" 
+                                           class="form-control form-control-lg fw-extrabold text-dark" 
+                                           placeholder="Enter staff valuation offer..." required oninput="updateLiveStaffOffer(this.value)">
+                                </div>
+                                <div class="d-flex gap-1 flex-wrap mb-1">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary rounded-pill px-2.5" onclick="applyStaffPreset('benchmark')">
+                                        <i class="fa-solid fa-calculator me-1"></i> Use System Guide
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" onclick="adjustStaffOffer(-500)">-₱500</button>
+                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" onclick="adjustStaffOffer(+500)">+₱500</button>
+                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" onclick="adjustStaffOffer(-1000)">-₱1,000</button>
+                                    <button type="button" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" onclick="adjustStaffOffer(+1000)">+₱1,000</button>
+                                </div>
+                                <small class="text-muted d-block mt-2" style="font-size:0.75rem;">
+                                    <i class="fa-solid fa-circle-check text-success me-1"></i> The staff determines and inputs the binding offer based on physical inspection and customer agreement.
+                                </small>
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100 py-2 fw-bold rounded-pill">
-                                <i class="fa-solid fa-save me-1"></i> Save Appraisal Record
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold">Staff Observations & Valuation Justification</label>
+                                <textarea name="remarks" class="form-control" rows="2" placeholder="e.g. Evaluated by technician: Screen pristine, battery tested 92%, housing clean. Agreed cash offer ₱14,000."></textarea>
+                            </div>
+
+                            <button type="submit" class="btn btn-dark w-100 py-2.5 fw-bold rounded-pill shadow-sm btn-tactile">
+                                <i class="fa-solid fa-check-circle me-1"></i> Save Official Staff Appraisal Record
                             </button>
                         </form>
                     </div>
@@ -250,15 +288,27 @@ require_once __DIR__ . '/../includes/header.php';
                 <!-- Live Appraisal Summary Card -->
                 <div class="col-lg-5">
                     <div class="card card-custom p-4 sticky-top" style="top: 80px;">
-                        <h5 class="fw-bold mb-3 border-bottom pb-2">Live Valuation Preview</h5>
+                        <div class="d-flex justify-content-between align-items-center mb-3 border-bottom pb-2">
+                            <h5 class="fw-bold mb-0 text-dark"><i class="fa-solid fa-clipboard-user me-2 text-primary"></i>Staff Official Decision</h5>
+                            <span class="badge bg-light text-dark border">Staff Authorized</span>
+                        </div>
                         
                         <div class="p-3 bg-light rounded-3 mb-3 text-center border">
-                            <span class="text-muted small text-uppercase fw-semibold d-block">Estimated Appraisal Offer</span>
-                            <h2 class="display-6 fw-extrabold text-primary mb-0" id="liveTotal">₱0.00</h2>
-                            <small class="text-muted" id="liveModelLabel">Please select a phone model</small>
+                            <span class="text-muted small text-uppercase fw-semibold d-block">Staff Final Cash / Trade Offer</span>
+                            <h2 class="display-6 fw-extrabold text-dark mb-0 font-monospace" id="liveStaffOfferDisplay">₱0.00</h2>
+                            <small class="badge bg-dark text-white rounded-pill px-2.5 py-1 mt-2 d-inline-block" id="liveEvaluatorLabel">
+                                <i class="fa-solid fa-user-check me-1 text-success"></i> Appraiser: <?= htmlspecialchars($current_user['fullname']) ?>
+                            </small>
                         </div>
 
+                        <div class="mb-2">
+                            <small class="text-uppercase fw-bold text-muted" style="font-size:0.7rem; letter-spacing:0.5px;">Diagnostic & Market Reference Guide</small>
+                        </div>
                         <div class="list-group list-group-flush small mb-3">
+                            <div class="list-group-item d-flex justify-content-between px-0">
+                                <span class="text-muted">Target Model:</span>
+                                <strong id="liveModelLabel" class="text-dark">Please select a phone model</strong>
+                            </div>
                             <div class="list-group-item d-flex justify-content-between px-0">
                                 <span class="text-muted">Base Market Benchmark:</span>
                                 <strong id="liveBaseVal">₱0.00</strong>
@@ -268,7 +318,7 @@ require_once __DIR__ . '/../includes/header.php';
                                 <strong id="liveGradeRate">100%</strong>
                             </div>
                             <div class="list-group-item d-flex justify-content-between px-0 text-danger">
-                                <span>Screen Deduction:</span>
+                                <span>Screen Condition Deduction:</span>
                                 <strong id="liveScreenDed">-₱0.00</strong>
                             </div>
                             <div class="list-group-item d-flex justify-content-between px-0 text-danger">
@@ -279,11 +329,15 @@ require_once __DIR__ . '/../includes/header.php';
                                 <span>Hardware Fault Deductions:</span>
                                 <strong id="liveHardwareDed">-₱0.00</strong>
                             </div>
+                            <div class="list-group-item d-flex justify-content-between px-2 py-2 bg-light rounded border mt-2">
+                                <span class="fw-semibold text-dark">Suggested Guide Value:</span>
+                                <strong id="liveSuggestedBenchmark" class="text-dark">₱0.00</strong>
+                            </div>
                         </div>
 
-                        <div class="alert alert-info py-2 small mb-0">
-                            <i class="fa-solid fa-circle-info me-1"></i>
-                            This algorithm standardizes buy-in prices to maintain shop margins and prevent over-valuation.
+                        <div class="alert alert-light border py-2.5 small mb-0 text-secondary" style="font-size:0.75rem;">
+                            <i class="fa-solid fa-user-shield text-dark me-1"></i>
+                            <strong>Staff Appraisal Authority:</strong> The staff appraiser physically tests the smartphone and sets the final offer. The suggested value serves only as an advisory guideline.
                         </div>
                     </div>
                 </div>
@@ -352,6 +406,8 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
+let currentBenchmark = 0;
+
 function calculateLive() {
     const select = document.getElementById('matrixSelect');
     const opt = select.options[select.selectedIndex];
@@ -397,14 +453,49 @@ function calculateLive() {
     if (!document.getElementById('camerasCheck').checked) hardwareDeduction += cameraDed;
     document.getElementById('liveHardwareDed').innerText = '-₱' + hardwareDeduction.toLocaleString('en-US', {minimumFractionDigits: 2});
 
-    let finalTotal = Math.max(1000, gradedVal - (screenDeduction + batDeduction + hardwareDeduction));
-    const totalElem = document.getElementById('liveTotal');
-    if (typeof animateNumber === 'function' && window._lastAppraisalVal !== undefined) {
-        animateNumber(totalElem, window._lastAppraisalVal, finalTotal, 300, '₱');
-    } else {
-        totalElem.innerText = '₱' + finalTotal.toLocaleString('en-US', {minimumFractionDigits: 2});
+    currentBenchmark = Math.max(500, gradedVal - (screenDeduction + batDeduction + hardwareDeduction));
+    document.getElementById('liveSuggestedBenchmark').innerText = '₱' + currentBenchmark.toLocaleString('en-US', {minimumFractionDigits: 2});
+
+    const staffInput = document.getElementById('finalAppraisedValue');
+    // If staff input is empty or was auto-filled, set to recommended benchmark
+    if (!staffInput.value || staffInput.dataset.autoFilled === 'true') {
+        staffInput.value = currentBenchmark;
+        staffInput.dataset.autoFilled = 'true';
+        updateLiveStaffOffer(currentBenchmark);
     }
-    window._lastAppraisalVal = finalTotal;
+}
+
+function updateLiveStaffOffer(val) {
+    const num = parseFloat(val) || 0;
+    const display = document.getElementById('liveStaffOfferDisplay');
+    if (display) {
+        display.innerText = '₱' + num.toLocaleString('en-US', {minimumFractionDigits: 2});
+    }
+    const staffInput = document.getElementById('finalAppraisedValue');
+    if (staffInput && Math.abs(num - currentBenchmark) > 1) {
+        staffInput.dataset.autoFilled = 'false';
+    }
+}
+
+function adjustStaffOffer(delta) {
+    const staffInput = document.getElementById('finalAppraisedValue');
+    if (!staffInput) return;
+    let cur = parseFloat(staffInput.value) || currentBenchmark || 0;
+    cur = Math.max(500, cur + delta);
+    staffInput.value = cur;
+    staffInput.dataset.autoFilled = 'false';
+    updateLiveStaffOffer(cur);
+}
+
+function applyStaffPreset(type) {
+    if (type === 'benchmark') {
+        const staffInput = document.getElementById('finalAppraisedValue');
+        if (staffInput) {
+            staffInput.value = currentBenchmark;
+            staffInput.dataset.autoFilled = 'true';
+            updateLiveStaffOffer(currentBenchmark);
+        }
+    }
 }
 </script>
 

@@ -76,9 +76,7 @@ function get_product_full_specs($item, $type = 'product') {
             '1x 8J Official Store Warranty & Claim Slip'
         ];
         $specs['gallery'] = [
-            'baseus_powerbank.jpg',
-            'bavin_cable.jpg',
-            'apple_adapter.jpg'
+            'baseus_powerbank.jpg'
         ];
     } elseif (stripos($sku, 'ACC-CHG-001') !== false || stripos($name, 'Apple 20W') !== false) {
         $specs['tagline'] = 'Original Fast-Charging Power Delivery Wall Adapter for iPhone & iPad';
@@ -108,6 +106,77 @@ function get_product_full_specs($item, $type = 'product') {
             '1x 8J Store Warranty Slip'
         ];
         $specs['gallery'] = ['apple_adapter.jpg', 'bavin_cable.jpg'];
+    } elseif (stripos($sku, 'ACC-PWR-007') !== false || stripos($name, 'Capsule') !== false) {
+        // Capsule Emergency Power Bank
+        $specs['tagline'] = 'Ultra-Compact Lipstick-Size Emergency Power Bank with Direct Plug-in Connector';
+        $specs['overview'] = 'The Capsule Mini Emergency Power Bank is the ultimate portable everyday charging essential. Designed without messy cords, it plugs directly into the bottom of your smartphone so you can continue taking calls, browsing, and taking photos without cables dangling in your hand. Featuring 5000mAh high-density polymer cells, a protective silicone plug cap, an integrated lanyard loop, and dual-connector options (Type-C and Lightning iOS versions). Compact enough to slide effortlessly into any pocket, clutch, or small purse.';
+        $specs['highlights'] = [
+            'Direct-Plug Design: No cables needed, charges right from the device port',
+            '5,000mAh High-Density Cell: Provides 1 full emergency boost for modern smartphones',
+            'Lipstick / Capsule Form Factor: Weighs only 95g with pocket-friendly dimensions',
+            'Built-in Lanyard Loop doubles as a convenient finger handle',
+            'Dual-Version Available: Native Apple Lightning or USB-C Reversible Plug',
+            'Intelligent Safe Charging: Overcurrent, temperature, and overcharge protection'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Universal / 8J Mobile Lifestyle',
+            'SKU' => 'ACC-PWR-007',
+            'Nominal Capacity' => '5,000mAh / 3.7V (18.5Wh)',
+            'Rated Usable Capacity' => '3,200mAh (5V / 2.1A)',
+            'Input Port' => 'USB Type-C (5V / 2.0A)',
+            'Direct Output Connector' => '5V / 2.1A Max Fast Flow (Lightning or Type-C)',
+            'Dimensions' => '79 x 46 x 27 mm',
+            'Net Weight' => '95 grams (Ultra-Lightweight)',
+            'Battery Cell Type' => 'Grade-A High-Density Polymer Lithium-Ion',
+            'Available Colors' => 'Sakura Pastel Pink, Pearl White',
+            'Safety Protection' => 'Overvoltage, Short-Circuit, and Overheat Thermal IC',
+            'Warranty' => '7-Day Instant Replacement Guarantee'
+        ];
+        $specs['compatibility'] = 'Compatible with iPhone 15/14/13/12/11/X/8 series, iPad, Samsung Galaxy A & S series, Xiaomi, Redmi, Oppo, Vivo, Realme, and all Type-C/Lightning devices.';
+        $specs['package_contents'] = [
+            '1x Mini Capsule 5000mAh Direct-Plug Emergency Power Bank',
+            '1x Type-C Recharging Cable',
+            '1x Integrated Silicone Connector Cap & Lanyard Strap',
+            '1x 8J Store Warranty Slip'
+        ];
+        $specs['gallery'] = ['capsule_powerbank.png'];
+    } elseif (stripos($sku, 'ACC-PWR-008') !== false || stripos($name, 'BAVIN 20000mAh') !== false) {
+        // BAVIN 20000mAh 22.5W Built-in Cable Power Bank
+        $specs['tagline'] = '22.5W Super Fast Charging Power Bank with Integrated Dual Output Cables & Digital Screen';
+        $specs['overview'] = 'The BAVIN 20000mAh 22.5W Super Charge Power Bank brings maximum all-day endurance with ultimate grab-and-go convenience. It features two built-in reinforced output cables (Type-C for modern Androids and iPhone 15, and Lightning for earlier iPhones and iPads), eliminating the need to ever carry separate charging cables again. The precision laser-cut HD LED digital display reveals exact battery percentage from 1% to 100%. Equipped with Huawei 22.5W SuperCharge (SCP), Apple 20W PD, and Quick Charge 3.0 protocols to power up to 4 devices simultaneously.';
+        $specs['highlights'] = [
+            '22.5W Maximum Super Fast Charge: Delivers up to 60% battery in 30 minutes for compatible phones',
+            'Dual Integrated Output Cables: Built-in Type-C + Lightning cables with lanyard clip',
+            'Real-Time HD LED Digital Display: Shows exact numerical percentage (0-100%)',
+            'Massive 20,000mAh Capacity: Recharges an iPhone up to 4.5 times, Samsung 3.5 times',
+            '4-Device Concurrent Charging: Built-in cables plus standard USB-A & USB-C ports',
+            'Airline Approved (74Wh): Complies fully with CAAP & FAA international flight safety limits'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'BAVIN Official Certified',
+            'SKU' => 'ACC-PWR-008',
+            'Battery Capacity' => '20,000mAh / 3.7V (74Wh High-Capacity)',
+            'Rated Usable Capacity' => '12,500mAh (5V / 3A)',
+            'Type-C Port Input (PD)' => '5V / 3A, 9V / 2A, 12V / 1.5A (18W Max)',
+            'Built-in Type-C Cable Output' => '4.5V / 5A (SCP), 5V / 4.5A, 9V / 2.22A, 12V / 1.67A (22.5W Max)',
+            'Built-in Lightning Cable Output' => '5V / 2.4A (12W Max Fast Charge)',
+            'USB-A Output Port' => '5V / 4.5A, 9V / 2A, 12V / 1.5A (22.5W Max)',
+            'Type-C Port Output' => '5V / 3A, 9V / 2.22A, 12V / 1.67A (20W PD)',
+            'Battery Level Indicator' => 'HD LED Digital Percentage Readout (0 - 100%)',
+            'Body Material' => 'V0 Fireproof ABS + Polycarbonate Matte Texture',
+            'Weight' => '418 grams',
+            'Safety Certifications' => 'CE, FCC, RoHS, UN38.3 Flight Certified',
+            'Warranty' => '7-Day Replacement + 30-Day Store Warranty'
+        ];
+        $specs['compatibility'] = 'iPhone 15/14/13/12/11/X/8 series, iPad Pro/Air/Mini, Samsung Galaxy S24/S23/S22/A-Series, Xiaomi, Redmi, Poco, Oppo, Vivo, Realme, Huawei, smartwatches, and TWS earbuds.';
+        $specs['package_contents'] = [
+            '1x BAVIN 20000mAh 22.5W Fast Charging Power Bank',
+            '1x Built-in Type-C High-Current Cable',
+            '1x Built-in Lightning Fast-Charge Cable',
+            '1x USB-A to Type-C Recharging Cable',
+            '1x BAVIN Official Certificate & 8J Store Warranty Slip'
+        ];
+        $specs['gallery'] = ['bavin_20000mah.png', 'bavin_powerbank_white.png'];
     } elseif (stripos($sku, 'ACC-CAB-002') !== false || stripos($name, 'Bavin') !== false) {
         $specs['tagline'] = 'Heavy-Duty 27W Braided Fast-Charging & Data Sync Cable';
         $specs['overview'] = 'Designed for durability and high-speed PD throughput, the Bavin Type-C to Lightning cable features high-density nylon ballistic braided shielding and reinforced zinc alloy connectors. Rated for 10,000+ bends, it withstands daily heavy usage while sustaining fast 27W power delivery and 480Mbps data synchronization.';
@@ -218,7 +287,7 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Type-C Charging Cable',
             '1x User Manual & 8J Warranty Slip'
         ];
-        $specs['gallery'] = ['lenovo_earbuds.jpg', 'earbuds.jpg'];
+        $specs['gallery'] = ['lenovo_earbuds.jpg'];
     } elseif ($type === 'unit' || isset($item['imei_1'])) {
         // Certified Phone Unit Specs
         $specs['tagline'] = '8J Certified Pre-Owned Smartphone - 100% Inspected & Openline';
@@ -259,7 +328,47 @@ function get_product_full_specs($item, $type = 'product') {
         ];
 
         // Phone gallery photos based on model
-        if (stripos($name, 'iPhone 13') !== false) {
+        if (stripos($name, 'Smart 20') !== false) {
+            $specs['tagline'] = '6.78" 120Hz Punch-Hole Screen, Helio G81 Ultimate & 5200mAh Battery';
+            $specs['overview'] = "The Infinix Smart 20 redefines budget excellence with a class-leading 6.78-inch 120Hz punch-hole display and a massive 5200mAh battery housed in an ultra-slim 7.7mm design. Powered by the MediaTek Helio G81 Ultimate processor with Mali-G52 MC2 GPU, it provides ultra-fluid navigation and everyday speed. Features Pure Voice Calls with Voiceprint Noise Reduction, Google AI Plus integration, 15W Type-C fast charging with OTG reverse charge, and dual AI cameras with 2K 30fps video recording.";
+            $specs['highlights'] = [
+                '6.78" 120Hz Smooth IPS LCD Punch-Hole Display (700 nits peak)',
+                'MediaTek Helio G81 Ultimate Octa-Core Processor + Mali-G52 MC2 GPU',
+                '5,200mAh High-Capacity Battery with 15W Type-C Fast Charging & OTG',
+                '7.7mm Ultra-Slim Profile: Featherweight ergonomic form factor',
+                'Pure Voice Calls: Voiceprint noise reduction filters ambient noise',
+                'Google AI Plus Integration with Gemini assistance',
+                '100% Brand New Sealed Unit, Openline to all Philippine networks'
+            ];
+            $specs['technical_details'] = [
+                'Brand' => 'Infinix',
+                'Model' => 'Smart 20',
+                'Internal Storage' => $item['storage_capacity'] ?? '128GB',
+                'Color Finish' => $item['color'] ?? 'Sunset Orange',
+                'Display Size & Panel' => '6.78-inch HD+ IPS LCD, 120Hz (Adaptive 45/60/90/120Hz)',
+                'Screen Resolution' => '720 x 1576 pixels (19.7:9 ratio, ~254 ppi, 700 nits)',
+                'Processor (SoC)' => 'MediaTek Helio G81 Ultimate (12nm Octa-Core)',
+                'Graphics (GPU)' => 'ARM Mali-G52 MC2',
+                'RAM Memory' => '4GB (+ Up to 4GB Extended Virtual RAM)',
+                'Rear Camera' => '8 MP f/2.0 Main Camera + Dual LED Flash, 2K@30fps Video',
+                'Front Camera' => '8 MP f/2.0 Selfie Camera, 2K@30fps Video',
+                'Battery & Charging' => '5,200 mAh, 15W Type-C 2.0 Fast Charging with OTG Support',
+                'Connectivity' => '4G LTE Dual Nano-SIM, Dual-Band Wi-Fi, Bluetooth 5.2, GPS',
+                'Audio System' => 'Voiceprint Noise-Reduction Mic, Loudspeaker, 3.5mm Audio Jack',
+                'Operating System' => 'Android with XOS Interface',
+                'Dimensions' => '167.7 x 78.8 x 7.7 mm, 185g',
+                'Warranty' => '1-Year Official Infinix Brand Warranty + 7-Day 8J Store Replacement'
+            ];
+            $specs['package_contents'] = [
+                '1x Infinix Smart 20 Handset (Brand New Sealed)',
+                '1x 15W Fast Wall Adapter',
+                '1x USB Type-C 2.0 Charging Cable',
+                '1x Protective Phone Case',
+                '1x Factory Applied Screen Protector',
+                '1x SIM Ejector Tool & Official Warranty Booklet'
+            ];
+            $specs['gallery'] = ['infinix_smart20_orange.png', 'infinix_smart20_silver.png'];
+        } elseif (stripos($name, 'iPhone 13') !== false) {
             $specs['gallery'] = ['iphone_13.jpg', 'apple_13_midnight.jpg', 'apple_13_blue.jpg', 'gsm_iphone13.jpg'];
         } elseif (stripos($name, 'iPhone 11') !== false) {
             $specs['gallery'] = ['iphone_11.jpg', 'apple_11_white.jpg'];

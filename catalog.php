@@ -31,14 +31,14 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
 
 <div class="container py-4">
     <!-- Header banner -->
-    <div class="card card-custom p-4 mb-4 text-white" style="background: linear-gradient(135deg, #09090b 0%, #18181b 100%); border: 1px solid #27272a;">
+    <div class="card card-custom p-4 mb-4 text-white" style="background: linear-gradient(135deg, #2d1122 0%, #4a1534 100%); border: 1px solid #831843;">
         <div class="row align-items-center">
             <div class="col-md-8">
                 <h3 class="fw-bold mb-1"><img src="<?= BASE_URL ?>assets/img/icons/shop.png" style="width: 28px; height: 28px; object-fit: contain; filter: brightness(0) invert(1);" alt="Catalog" class="me-2">Online Store Catalog</h3>
                 <p class="mb-0 text-white-50">Reserve premium accessories and certified smartphones online for fast store pick-up at Tanauan City!</p>
             </div>
             <div class="col-md-4 text-md-end mt-3 mt-md-0">
-                <a href="<?= BASE_URL ?>cart.php" class="btn btn-light fw-bold text-dark rounded-pill px-4 shadow-sm">
+                <a href="<?= BASE_URL ?>cart.php" class="btn btn-light fw-bold rounded-pill px-4 shadow-sm" style="background-color: #fce7f3 !important; color: #831843 !important; border-color: #f472b6 !important;">
                     <img src="<?= BASE_URL ?>assets/img/icons/cart.png" style="width: 18px; height: 18px; object-fit: contain;" alt="Cart" class="me-1"> View Pick-Up Cart
                 </a>
             </div>

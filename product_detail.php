@@ -93,31 +93,30 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
             <!-- Left Column: Interactive Product Gallery -->
             <div class="col-lg-6">
                 <div class="position-sticky" style="top: 90px;">
-                    <!-- Main Large Image Container -->
-                    <div class="product-gallery-main p-4 rounded-4 position-relative d-flex align-items-center justify-content-center border"
-                         style="min-height: 420px; background: radial-gradient(circle, #ffffff 50%, #f4f4f5 100%);">
-                        
-                        <!-- Badges Overlay -->
-                        <div class="position-absolute top-0 start-0 m-3 d-flex flex-column gap-2">
-                            <span class="badge bg-dark text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                                <i class="fa-solid fa-circle-check text-success me-1"></i> 100% Genuine 8J Stock
+                    <!-- Badges Header Bar (Cleanly above image, prevents any overlap) -->
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <span class="badge bg-dark text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
+                            <i class="fa-solid fa-circle-check text-success me-1"></i> 100% Genuine 8J Stock
+                        </span>
+                        <?php if ($type === 'unit'): ?>
+                            <span class="badge bg-success text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
+                                <i class="fa-solid fa-shield-halved me-1"></i> <?= htmlspecialchars($item['unit_condition'] ?? 'Certified Grade A') ?>
                             </span>
-                            <?php if ($type === 'unit'): ?>
-                                <span class="badge bg-success text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                                    <i class="fa-solid fa-shield-halved me-1"></i> <?= htmlspecialchars($item['unit_condition'] ?? 'Certified Grade A') ?>
-                                </span>
-                            <?php else: ?>
-                                <span class="badge bg-light text-dark border rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                                    <i class="fa-solid fa-truck-fast me-1"></i> Tanauan In-Store Pick-Up
-                                </span>
-                            <?php endif; ?>
-                        </div>
+                        <?php else: ?>
+                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
+                                <i class="fa-solid fa-truck-fast me-1"></i> Tanauan In-Store Pick-Up
+                            </span>
+                        <?php endif; ?>
+                    </div>
 
+                    <!-- Main Large Image Container -->
+                    <div class="product-gallery-main p-3 rounded-4 d-flex align-items-center justify-content-center border"
+                         style="height: 420px; background: #ffffff;">
                         <!-- Active Image with Smooth Zoom Preview -->
                         <img id="mainProductView" src="<?= $main_image ?>" 
                              alt="<?= htmlspecialchars($item_name) ?>" 
                              class="img-fluid rounded-3" 
-                             style="max-height: 360px; object-fit: contain; filter: drop-shadow(0 16px 28px rgba(0,0,0,0.12)); transition: transform 0.35s ease, opacity 0.25s ease;">
+                             style="max-height: 380px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.08)); transition: transform 0.3s ease, opacity 0.2s ease;">
                     </div>
 
                     <!-- Gallery Thumbnails Strip -->
@@ -160,8 +159,8 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
                     <span class="badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill small">
                         <?= htmlspecialchars($category_name) ?>
                     </span>
-                    <span class="text-muted small ms-auto" style="font-size: 0.8rem;">
-                        <i class="fa-solid fa-barcode me-1"></i> SKU: <code><?= htmlspecialchars($sku) ?></code>
+                    <span class="text-muted small ms-auto d-flex align-items-center gap-1" style="font-size: 0.8rem;">
+                        <i class="fa-solid fa-barcode"></i> SKU: <span class="badge bg-light text-dark border font-monospace px-2 py-1"><?= htmlspecialchars($sku) ?></span>
                     </span>
                 </div>
 
@@ -196,7 +195,7 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
                 </div>
 
                 <!-- Pricing Block -->
-                <div class="p-4 rounded-4 mb-4" style="background: linear-gradient(135deg, #09090b 0%, #18181b 100%); color: #ffffff;">
+                <div class="p-4 rounded-4 mb-4" style="background: linear-gradient(135deg, #2d1122 0%, #4a1534 100%); color: #ffffff; border: 1px solid #831843;">
                     <div class="d-flex justify-content-between align-items-baseline mb-1">
                         <span class="text-uppercase fw-bold text-white-50" style="font-size: 0.75rem; letter-spacing: 1px;">Standard Retail Price</span>
                         <span class="badge bg-light text-dark rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.7rem;">VAT Inclusive</span>

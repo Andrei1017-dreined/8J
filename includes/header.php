@@ -16,21 +16,23 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <!-- Award-Winning UI Transitions & Animations -->
-    <link href="<?= BASE_URL ?>assets/css/animations.css" rel="stylesheet">
+    <link href="<?= BASE_URL ?>assets/css/animations.css?v=<?= time() ?>" rel="stylesheet">
     <style>
         :root {
-            --primary-color: #09090b;
-            --primary-dark: #18181b;
-            --sidebar-bg: #09090b;
-            --sidebar-hover: #18181b;
-            --accent-color: #27272a;
-            --surface-bg: #fafafa;
-            --card-border: #e4e4e7;
+            --primary-color: #f472b6;       /* Rose pink */
+            --primary-dark: #db2777;        /* Deeper pink / magenta for contrast */
+            --primary-light: #fce7f3;       /* Pastel light pink */
+            --sidebar-bg: #2d1122;          /* Elegant dark rose */
+            --sidebar-hover: #451a35;
+            --accent-color: #fbcfe8;        /* Soft petal pink */
+            --surface-bg: #fff5f8;          /* Light pink tinted background */
+            --card-border: #fce7f3;         /* Subtle soft pink border */
+            --text-main: #2b1120;           /* High contrast dark rose-charcoal */
         }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--surface-bg);
-            color: #09090b;
+            color: var(--text-main);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
@@ -42,107 +44,144 @@ $current_page = basename($_SERVER['PHP_SELF']);
             width: 100%;
         }
 
-        /* Black & White Monochrome Overrides */
-        .btn-primary, .btn-success, .btn-dark {
-            background-color: #09090b !important;
-            border-color: #09090b !important;
+        /* Light Pink Palette Overrides */
+        .btn-primary, .btn-success {
+            background-color: #f472b6 !important;
+            border-color: #f472b6 !important;
             color: #ffffff !important;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+            box-shadow: 0 2px 10px rgba(244, 114, 182, 0.35);
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .btn-primary:hover, .btn-primary:focus,
-        .btn-success:hover, .btn-success:focus,
+        .btn-success:hover, .btn-success:focus {
+            background-color: #db2777 !important;
+            border-color: #db2777 !important;
+            color: #ffffff !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 14px rgba(219, 39, 119, 0.4);
+        }
+
+        .btn-dark {
+            background-color: #db2777 !important;
+            border-color: #db2777 !important;
+            color: #ffffff !important;
+            box-shadow: 0 2px 8px rgba(219, 39, 119, 0.25);
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
         .btn-dark:hover, .btn-dark:focus {
-            background-color: #27272a !important;
-            border-color: #27272a !important;
+            background-color: #be185d !important;
+            border-color: #be185d !important;
             color: #ffffff !important;
             transform: translateY(-1px);
         }
-        .btn-outline-primary, .btn-outline-success, .btn-outline-dark {
-            color: #09090b !important;
-            border-color: #09090b !important;
+
+        .btn-outline-primary, .btn-outline-success {
+            color: #db2777 !important;
+            border-color: #f472b6 !important;
             background-color: transparent !important;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .btn-outline-primary:hover, .btn-outline-primary:focus,
-        .btn-outline-success:hover, .btn-outline-success:focus,
-        .btn-outline-dark:hover, .btn-outline-dark:focus {
-            background-color: #09090b !important;
-            color: #ffffff !important;
-            border-color: #09090b !important;
+        .btn-outline-success:hover, .btn-outline-success:focus {
+            background-color: #fce7f3 !important;
+            color: #db2777 !important;
+            border-color: #f472b6 !important;
             transform: translateY(-1px);
         }
 
-        .badge.bg-primary, .badge.bg-success, .badge.bg-dark {
-            background-color: #09090b !important;
+        .btn-outline-dark {
+            color: #9d174d !important;
+            border-color: #fbcfe8 !important;
+            background-color: transparent !important;
+            transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .btn-outline-dark:hover, .btn-outline-dark:focus {
+            background-color: #fce7f3 !important;
+            color: #831843 !important;
+            border-color: #f472b6 !important;
+            transform: translateY(-1px);
+        }
+
+        .badge.bg-primary, .badge.bg-success {
+            background-color: #f472b6 !important;
+            color: #ffffff !important;
+            font-weight: 600;
+        }
+        .badge.bg-dark {
+            background-color: #db2777 !important;
             color: #ffffff !important;
             font-weight: 600;
         }
         .badge.bg-light {
-            background-color: #f4f4f5 !important;
-            color: #18181b !important;
-            border: 1px solid #e4e4e7 !important;
+            background-color: #fdf2f8 !important;
+            color: #be185d !important;
+            border: 1px solid #fce7f3 !important;
         }
         .badge.bg-secondary, .badge.bg-warning, .badge.bg-info {
-            background-color: #27272a !important;
-            color: #ffffff !important;
+            background-color: #fbcfe8 !important;
+            color: #9d174d !important;
         }
 
         .text-primary, .text-success, .text-info {
-            color: #09090b !important;
+            color: #db2777 !important;
         }
         .bg-primary-subtle, .bg-success-subtle, .bg-info-subtle, .bg-warning-subtle {
-            background-color: #f4f4f5 !important;
-            color: #09090b !important;
+            background-color: #fdf2f8 !important;
+            color: #db2777 !important;
         }
         .border-primary, .border-success, .border-info {
-            border-color: #18181b !important;
+            border-color: #fbcfe8 !important;
         }
 
         .nav-pills .nav-link {
-            color: #71717a !important;
+            color: #885d73 !important;
             border-radius: 9999px;
             padding: 0.5rem 1.25rem;
             transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
         }
         .nav-pills .nav-link:hover {
-            color: #09090b !important;
-            background-color: #f4f4f5 !important;
+            color: #db2777 !important;
+            background-color: #fce7f3 !important;
         }
         .nav-pills .nav-link.active {
-            background-color: #09090b !important;
+            background-color: #f472b6 !important;
             color: #ffffff !important;
-            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 6px rgba(244, 114, 182, 0.3);
         }
         .pagination .page-item.active .page-link {
-            background-color: #09090b !important;
-            border-color: #09090b !important;
+            background-color: #f472b6 !important;
+            border-color: #f472b6 !important;
             color: #ffffff !important;
         }
         .pagination .page-link {
-            color: #09090b !important;
+            color: #db2777 !important;
         }
 
         .form-control:focus, .form-select:focus {
-            border-color: #09090b !important;
-            box-shadow: 0 0 0 3px rgba(9, 9, 11, 0.12) !important;
+            border-color: #f472b6 !important;
+            box-shadow: 0 0 0 3px rgba(244, 114, 182, 0.25) !important;
         }
 
         .alert-success, .alert-info, .alert-warning {
-            background-color: #f4f4f5 !important;
-            color: #09090b !important;
-            border: 1px solid #18181b !important;
+            background-color: #fdf2f8 !important;
+            color: #831843 !important;
+            border: 1px solid #fbcfe8 !important;
         }
         .alert-danger {
-            background-color: #fafafa !important;
-            color: #09090b !important;
-            border: 1px solid #09090b !important;
+            background-color: #fff1f2 !important;
+            color: #9f1239 !important;
+            border: 1px solid #fecdd3 !important;
+        }
+
+        .card {
+            border-color: #fce7f3 !important;
         }
 
         .navbar-custom {
-            background: #ffffff;
-            box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-            border-bottom: 1px solid var(--card-border);
+            background: rgba(255, 255, 255, 0.95);
+            box-shadow: 0 1px 3px 0 rgba(244, 114, 182, 0.08);
+            border-bottom: 1px solid #fce7f3 !important;
+        }
         }
         .sidebar {
             background-color: var(--sidebar-bg);
@@ -262,6 +301,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </ul>
 
                 <ul class="navbar-nav ms-auto align-items-center gap-2">
+                    <li class="nav-item d-none d-xl-block">
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
+                            <i class="fa-solid fa-store me-1 text-secondary"></i> Tanauan Counter Open • 1-Hr Pick-Up
+                        </span>
+                    </li>
                     <li class="nav-item">
                         <a class="btn btn-outline-dark btn-sm rounded-circle d-flex align-items-center justify-content-center" href="https://www.facebook.com/profile.php?id=100063760157450" target="_blank" rel="noopener noreferrer" title="Visit 8J on Facebook" style="width: 32px; height: 32px; border-color: #e4e4e7;">
                             <i class="fa-brands fa-facebook-f" style="color: #1877f2; font-size: 0.85rem;"></i>

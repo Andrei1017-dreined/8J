@@ -42,12 +42,12 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <style>
-    /* Monochrome Palette Enhancements */
+    /* Light Pink Brand Pills & Chips */
     .brand-pill {
-        border: 1px solid #e4e4e7;
-        background: #ffffff;
-        color: #18181b;
-        padding: 0.45rem 0.9rem;
+        border: 1px solid #fbcfe8 !important;
+        background: #fff0f5 !important;
+        color: #9d174d !important;
+        padding: 0.45rem 0.95rem;
         border-radius: 9999px;
         font-size: 0.82rem;
         font-weight: 600;
@@ -57,22 +57,35 @@ require_once __DIR__ . '/includes/header.php';
         align-items: center;
         gap: 6px;
         user-select: none;
+        box-shadow: 0 1px 3px rgba(244, 114, 182, 0.12);
+    }
+    .brand-pill i {
+        color: #db2777 !important;
+        transition: color 0.2s ease;
     }
     .brand-pill:hover {
-        background: #f4f4f5;
-        border-color: #18181b;
+        background: #fce7f3 !important;
+        border-color: #f472b6 !important;
+        color: #831843 !important;
         transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(244, 114, 182, 0.25);
+    }
+    .brand-pill:hover i {
+        color: #be185d !important;
     }
     .brand-pill.active {
-        background: #09090b !important;
+        background: #f472b6 !important;
         color: #ffffff !important;
-        border-color: #09090b !important;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        border-color: #f472b6 !important;
+        box-shadow: 0 4px 14px rgba(244, 114, 182, 0.45) !important;
+    }
+    .brand-pill.active i {
+        color: #ffffff !important;
     }
     .model-chip {
-        border: 1px dashed #d4d4d8;
-        background: #fafafa;
-        color: #3f3f46;
+        border: 1px dashed #fbcfe8;
+        background: #fff5f8;
+        color: #831843;
         padding: 0.35rem 0.75rem;
         border-radius: 8px;
         font-size: 0.78rem;
@@ -82,15 +95,15 @@ require_once __DIR__ . '/includes/header.php';
         display: inline-block;
     }
     .model-chip:hover {
-        background: #09090b;
+        background: #f472b6;
         color: #ffffff;
         border-style: solid;
-        border-color: #09090b;
+        border-color: #f472b6;
     }
     .issue-badge {
-        border: 1px solid #e4e4e7;
-        background: #ffffff;
-        color: #18181b;
+        border: 1px solid #fbcfe8 !important;
+        background: #fff0f5 !important;
+        color: #9d174d !important;
         padding: 0.45rem 0.95rem;
         border-radius: 9999px;
         font-size: 0.82rem;
@@ -101,36 +114,38 @@ require_once __DIR__ . '/includes/header.php';
         align-items: center;
         gap: 7px;
         user-select: none;
+        box-shadow: 0 1px 3px rgba(244, 114, 182, 0.12);
     }
     .issue-badge i {
-        color: #71717a;
+        color: #db2777 !important;
         font-size: 0.82rem;
         transition: color 0.18s ease;
     }
     .issue-badge:hover {
-        border-color: #09090b;
-        background: #f4f4f5;
-        color: #09090b;
+        border-color: #f472b6 !important;
+        background: #fce7f3 !important;
+        color: #831843 !important;
         transform: translateY(-1px);
+        box-shadow: 0 3px 10px rgba(244, 114, 182, 0.25);
     }
     .issue-badge:hover i {
-        color: #09090b;
+        color: #be185d !important;
     }
     .issue-badge:active {
         transform: scale(0.97);
     }
     .issue-badge.selected {
-        background: #09090b !important;
+        background: #f472b6 !important;
         color: #ffffff !important;
-        border-color: #09090b !important;
-        box-shadow: 0 2px 8px -1px rgba(9, 9, 11, 0.25) !important;
+        border-color: #f472b6 !important;
+        box-shadow: 0 4px 14px rgba(244, 114, 182, 0.45) !important;
         transform: translateY(0);
     }
     .issue-badge.selected i {
         color: #ffffff !important;
     }
     .time-slot-card {
-        border: 1px solid #e4e4e7;
+        border: 1px solid #fce7f3;
         background: #ffffff;
         border-radius: 10px;
         padding: 0.75rem;
@@ -139,16 +154,22 @@ require_once __DIR__ . '/includes/header.php';
         transition: all 0.2s ease;
     }
     .time-slot-card:hover {
-        border-color: #09090b;
-        background: #f4f4f5;
+        border-color: #f472b6;
+        background: #fdf2f8;
     }
     .time-slot-card.active {
-        background: #09090b;
-        color: #ffffff;
-        border-color: #09090b;
+        background: #f472b6 !important;
+        border-color: #f472b6 !important;
+        box-shadow: 0 4px 14px rgba(244, 114, 182, 0.4) !important;
     }
-    .time-slot-card.active .text-muted {
-        color: #a1a1aa !important;
+    .time-slot-card.active .fw-bold {
+        color: #ffffff !important;
+    }
+    .time-slot-card.active .text-muted,
+    .time-slot-card.active small {
+        color: #000000 !important;
+        font-weight: 700 !important;
+        opacity: 1 !important;
     }
 </style>
 
@@ -157,7 +178,7 @@ require_once __DIR__ . '/includes/header.php';
         <div class="col-lg-11">
 
             <?php if ($message): ?>
-                <div class="alert <?= strpos($message, 'Error') !== false ? 'alert-danger' : 'alert-dark text-white' ?> alert-dismissible fade show mb-4 rounded-3" style="background:#09090b; border:1px solid #27272a;" role="alert">
+                <div class="alert <?= strpos($message, 'Error') !== false ? 'alert-danger' : 'alert-dark text-white' ?> alert-dismissible fade show mb-4 rounded-3" style="background:#2d1122; border:1px solid #831843;" role="alert">
                     <i class="fa-solid <?= strpos($message, 'Error') !== false ? 'fa-circle-xmark' : 'fa-circle-check' ?> me-2"></i>
                     <?= htmlspecialchars($message) ?>
                     <button type="button" class="btn-close btn-close-white" data-bs-dismiss="alert"></button>

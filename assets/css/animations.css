@@ -105,8 +105,8 @@ html {
 
 .card-custom:hover, .stat-card:hover {
     transform: translateY(-5px) !important;
-    box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.09) !important;
-    border-color: #27272a !important;
+    box-shadow: 0 16px 36px -12px rgba(244, 114, 182, 0.2) !important;
+    border-color: #f472b6 !important;
 }
 
 /* 5. Tactile Button Press Physics (Apple / Linear style) */
@@ -124,7 +124,7 @@ html {
 }
 
 .btn-primary:hover {
-    box-shadow: 0 8px 20px -4px rgba(9, 9, 11, 0.35) !important;
+    box-shadow: 0 8px 20px -4px rgba(219, 39, 119, 0.35) !important;
 }
 
 /* 6. Interactive Pill & Chip Micro-Interactions (Apple / Linear Design) */
@@ -149,10 +149,10 @@ html {
 
 .brand-pill.active, .issue-badge.selected {
     transform: translateY(0) !important;
-    background-color: #09090b !important;
+    background-color: #f472b6 !important;
     color: #ffffff !important;
-    border-color: #09090b !important;
-    box-shadow: 0 3px 10px -2px rgba(9, 9, 11, 0.25) !important;
+    border-color: #f472b6 !important;
+    box-shadow: 0 4px 14px rgba(244, 114, 182, 0.4) !important;
 }
 
 .issue-badge i {
@@ -240,7 +240,83 @@ html {
     opacity: 1;
 }
 
-/* 12. Respect User Motion Preferences */
+/* 12. Award-Winning Ambient Lighting & Bento Grid Systems */
+.hero-mesh-dark {
+    background: radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
+                radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
+                linear-gradient(135deg, #09090b 0%, #18181b 100%) !important;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero-mesh-dark::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
+    background-size: 28px 28px;
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.bento-grid {
+    display: grid;
+    grid-template-columns: repeat(12, 1fr);
+    gap: 1.5rem;
+}
+
+.bento-card {
+    background: #ffffff;
+    border: 1px solid #fce7f3;
+    border-radius: 20px;
+    padding: 2rem;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo), border-color 0.3s ease;
+}
+
+.bento-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 20px 40px -15px rgba(244, 114, 182, 0.2);
+    border-color: #f472b6;
+}
+
+.bento-card.dark {
+    background: linear-gradient(135deg, #2d1122 0%, #4a1534 100%);
+    border-color: #831843;
+    color: #ffffff;
+}
+
+.bento-card.dark:hover {
+    border-color: #f472b6;
+    box-shadow: 0 20px 40px -15px rgba(74, 21, 52, 0.5);
+}
+
+.interactive-pill-group .pill-btn {
+    border: 1px solid #e4e4e7;
+    background: #ffffff;
+    color: #09090b;
+    border-radius: 9999px;
+    padding: 0.5rem 1.25rem;
+    font-size: 0.82rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s var(--ease-out-expo);
+}
+
+.interactive-pill-group .pill-btn:hover {
+    border-color: #09090b;
+    background: #f4f4f5;
+}
+
+.interactive-pill-group .pill-btn.active {
+    background: #09090b;
+    color: #ffffff;
+    border-color: #09090b;
+    box-shadow: 0 4px 12px rgba(9, 9, 11, 0.2);
+}
+
+/* 13. Respect User Motion Preferences */
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
         animation-duration: 0.01ms !important;
