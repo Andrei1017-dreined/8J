@@ -346,6 +346,11 @@ try {
                                 <i class="fa-solid fa-cart-plus"></i> Add to Pick-Up Cart
                             </button>
                         </div>
+                        <div class="mt-3 pt-2 border-top">
+                            <a id="modalViewFullSpecsBtn" href="#" class="btn btn-outline-dark rounded-pill w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                <i class="fa-solid fa-circle-info"></i> View Full Specifications & Technical Details <i class="fa-solid fa-arrow-right ms-1"></i>
+                            </a>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -422,6 +427,11 @@ try {
                             </button>
                             <a href="<?= BASE_URL ?>admin/trading.php" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.85rem;">
                                 <i class="fa-solid fa-arrows-rotate text-primary"></i> Trade-In Swap
+                            </a>
+                        </div>
+                        <div class="mt-3 pt-2 border-top">
+                            <a id="modalPhoneViewFullSpecsBtn" href="#" class="btn btn-outline-dark rounded-pill w-100 py-2 fw-semibold d-flex align-items-center justify-content-center gap-2">
+                                <i class="fa-solid fa-circle-info"></i> View Full 25-Point Diagnostic & Specifications <i class="fa-solid fa-arrow-right ms-1"></i>
                             </a>
                         </div>
                     </div>
@@ -633,6 +643,10 @@ function openModalFromCard(card, bsModal) {
     document.getElementById('modalProductPrice').innerText = formattedPrice;
     document.getElementById('modalProductDescription').innerText = description;
     document.getElementById('modalPreviewQty').value = 1;
+    const viewSpecsBtn = document.getElementById('modalViewFullSpecsBtn');
+    if (viewSpecsBtn) {
+        viewSpecsBtn.href = '<?= BASE_URL ?>product_detail.php?id=' + id;
+    }
 
     const imgEl = document.getElementById('modalProductImage');
     const iconEl = document.getElementById('modalProductFallbackIcon');
@@ -676,6 +690,10 @@ function openPhoneModalFromCard(card, bsPhoneModal) {
     document.getElementById('modalSpecBattery').innerText = 'Battery: ' + (battery ? (battery + '%') : 'Tested OK');
     document.getElementById('modalSpecImei').innerText = imei;
     document.getElementById('modalPhoneNotes').innerText = notes;
+    const viewPhoneSpecsBtn = document.getElementById('modalPhoneViewFullSpecsBtn');
+    if (viewPhoneSpecsBtn) {
+        viewPhoneSpecsBtn.href = '<?= BASE_URL ?>product_detail.php?type=unit&id=' + id;
+    }
 
     const imgEl = document.getElementById('modalPhoneImage');
     const iconEl = document.getElementById('modalPhoneFallbackIcon');

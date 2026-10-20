@@ -89,30 +89,37 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                     ?>
                         <div class="col-6 col-md-4 col-lg-3">
                             <div class="card h-100 card-custom stat-card overflow-hidden">
-                                <div class="bg-light p-3 text-center d-flex align-items-center justify-content-center" style="height: 140px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
+                                <a href="<?= BASE_URL ?>product_detail.php?id=<?= $p['id'] ?>" class="bg-light p-3 text-center d-flex align-items-center justify-content-center text-decoration-none" style="height: 140px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
                                     <?php if (!empty($p_img)): ?>
                                         <img src="<?= $p_img ?>" alt="<?= htmlspecialchars($p['name']) ?>" style="max-height: 120px; max-width: 100%; object-fit: contain;">
                                     <?php else: ?>
                                         <i class="fa-solid fa-plug-circle-bolt fs-2 text-primary opacity-50"></i>
                                     <?php endif; ?>
-                                </div>
+                                </a>
                                 <div class="card-body d-flex flex-column">
                                     <div class="badge bg-light text-secondary border align-self-start mb-2" style="font-size: 0.68rem;">
                                         <?= htmlspecialchars($p['brand'] ?? 'Accessory') ?>
                                     </div>
-                                    <h6 class="fw-bold mb-1 text-dark"><?= htmlspecialchars($p['name']) ?></h6>
+                                    <h6 class="fw-bold mb-1 text-dark">
+                                        <a href="<?= BASE_URL ?>product_detail.php?id=<?= $p['id'] ?>" class="text-decoration-none text-dark hover-underline"><?= htmlspecialchars($p['name']) ?></a>
+                                    </h6>
                                     <p class="text-muted small mb-2 text-truncate" title="<?= htmlspecialchars($p['description']) ?>">
                                         <?= htmlspecialchars($p['description'] ?? 'Quality accessory') ?>
                                     </p>
-                                    <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
+                                    <div class="mt-auto pt-2 d-flex justify-content-between align-items-center gap-1">
                                         <span class="fw-extrabold text-primary fs-5"><?= format_currency($p['selling_price']) ?></span>
-                                        <?php if ($p['stock_quantity'] > 0): ?>
-                                            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="addToCart(<?= $p['id'] ?>, '<?= addslashes(htmlspecialchars($p['name'])) ?>', <?= $p['selling_price'] ?>, 'product')">
-                                                <i class="fa-solid fa-plus me-1"></i> Add
-                                            </button>
-                                        <?php else: ?>
-                                            <span class="badge bg-secondary">Out of Stock</span>
-                                        <?php endif; ?>
+                                        <div class="d-flex gap-1">
+                                            <a href="<?= BASE_URL ?>product_detail.php?id=<?= $p['id'] ?>" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" title="View Full Specifications">
+                                                <i class="fa-solid fa-circle-info"></i>
+                                            </a>
+                                            <?php if ($p['stock_quantity'] > 0): ?>
+                                                <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="addToCart(<?= $p['id'] ?>, '<?= addslashes(htmlspecialchars($p['name'])) ?>', <?= $p['selling_price'] ?>, 'product')">
+                                                    <i class="fa-solid fa-plus me-1"></i> Add
+                                                </button>
+                                            <?php else: ?>
+                                                <span class="badge bg-secondary">Out of Stock</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -139,19 +146,21 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                     ?>
                         <div class="col-md-6 col-lg-4">
                             <div class="card h-100 card-custom stat-card border overflow-hidden">
-                                <div class="bg-light p-3 text-center d-flex align-items-center justify-content-center" style="height: 160px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
+                                <a href="<?= BASE_URL ?>product_detail.php?type=unit&id=<?= $u['id'] ?>" class="bg-light p-3 text-center d-flex align-items-center justify-content-center text-decoration-none" style="height: 160px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
                                     <?php if (!empty($u_img)): ?>
                                         <img src="<?= $u_img ?>" alt="<?= htmlspecialchars($u['model_name']) ?>" style="max-height: 140px; max-width: 100%; object-fit: contain;">
                                     <?php else: ?>
                                         <i class="fa-solid fa-mobile-screen fs-1 text-primary opacity-50"></i>
                                     <?php endif; ?>
-                                </div>
+                                </a>
                                 <div class="card-body d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <span class="badge bg-info-subtle text-info-emphasis border"><?= htmlspecialchars($u['brand']) ?></span>
                                         <span class="badge bg-success-subtle text-success-emphasis border"><?= htmlspecialchars($u['unit_condition']) ?></span>
                                     </div>
-                                    <h5 class="fw-bold text-dark mb-1"><?= htmlspecialchars($u['model_name']) ?></h5>
+                                    <h5 class="fw-bold text-dark mb-1">
+                                        <a href="<?= BASE_URL ?>product_detail.php?type=unit&id=<?= $u['id'] ?>" class="text-decoration-none text-dark hover-underline"><?= htmlspecialchars($u['model_name']) ?></a>
+                                    </h5>
                                     <div class="text-muted small mb-2">
                                         <span><?= htmlspecialchars($u['storage_capacity']) ?></span> • 
                                         <span><?= htmlspecialchars($u['color']) ?></span>
@@ -160,14 +169,19 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                                         <?php endif; ?>
                                     </div>
                                     <p class="text-muted small mb-3"><?= htmlspecialchars($u['notes'] ?? 'Fully tested and inspected unit.') ?></p>
-                                    <div class="mt-auto pt-2 d-flex justify-content-between align-items-center">
+                                    <div class="mt-auto pt-2 d-flex justify-content-between align-items-center gap-1">
                                         <div>
                                             <span class="text-muted small d-block" style="font-size:0.75rem;">Price</span>
                                             <span class="fw-extrabold text-primary fs-5"><?= format_currency($u['selling_price']) ?></span>
                                         </div>
-                                        <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="addToCart(<?= $u['id'] ?>, '<?= addslashes(htmlspecialchars($u['brand'] . ' ' . $u['model_name'] . ' ' . $u['storage_capacity'])) ?>', <?= $u['selling_price'] ?>, 'phone_unit')">
-                                            <i class="fa-solid fa-cart-arrow-down me-1"></i> Reserve for Pick-Up
-                                        </button>
+                                        <div class="d-flex gap-1">
+                                            <a href="<?= BASE_URL ?>product_detail.php?type=unit&id=<?= $u['id'] ?>" class="btn btn-sm btn-outline-dark rounded-pill px-2.5" title="View Full Diagnostic & Specs">
+                                                <i class="fa-solid fa-circle-info"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-primary rounded-pill px-3" onclick="addToCart(<?= $u['id'] ?>, '<?= addslashes(htmlspecialchars($u['brand'] . ' ' . $u['model_name'] . ' ' . $u['storage_capacity'])) ?>', <?= $u['selling_price'] ?>, 'phone_unit')">
+                                                <i class="fa-solid fa-cart-arrow-down me-1"></i> Reserve
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
