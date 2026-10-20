@@ -81,9 +81,21 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
             <h4 class="fw-bold mb-3"><i class="fa-solid fa-headphones me-2 text-primary"></i>Accessories & Charging Essentials</h4>
             <div class="row g-3">
                 <?php if (!empty($products)): ?>
-                    <?php foreach ($products as $p): ?>
+                    <?php foreach ($products as $p): 
+                        $p_img = '';
+                        if (!empty($p['image']) && file_exists(__DIR__ . '/assets/img/products/' . $p['image'])) {
+                            $p_img = BASE_URL . 'assets/img/products/' . $p['image'];
+                        }
+                    ?>
                         <div class="col-6 col-md-4 col-lg-3">
-                            <div class="card h-100 card-custom stat-card">
+                            <div class="card h-100 card-custom stat-card overflow-hidden">
+                                <div class="bg-light p-3 text-center d-flex align-items-center justify-content-center" style="height: 140px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
+                                    <?php if (!empty($p_img)): ?>
+                                        <img src="<?= $p_img ?>" alt="<?= htmlspecialchars($p['name']) ?>" style="max-height: 120px; max-width: 100%; object-fit: contain;">
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-plug-circle-bolt fs-2 text-primary opacity-50"></i>
+                                    <?php endif; ?>
+                                </div>
                                 <div class="card-body d-flex flex-column">
                                     <div class="badge bg-light text-secondary border align-self-start mb-2" style="font-size: 0.68rem;">
                                         <?= htmlspecialchars($p['brand'] ?? 'Accessory') ?>
@@ -119,9 +131,21 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
             <h4 class="fw-bold mb-3"><i class="fa-solid fa-mobile-screen me-2 text-primary"></i>Available Smartphones & Certified Units</h4>
             <div class="row g-3">
                 <?php if (!empty($phone_units)): ?>
-                    <?php foreach ($phone_units as $u): ?>
+                    <?php foreach ($phone_units as $u): 
+                        $u_img = '';
+                        if (!empty($u['image']) && file_exists(__DIR__ . '/assets/img/products/' . $u['image'])) {
+                            $u_img = BASE_URL . 'assets/img/products/' . $u['image'];
+                        }
+                    ?>
                         <div class="col-md-6 col-lg-4">
-                            <div class="card h-100 card-custom stat-card border">
+                            <div class="card h-100 card-custom stat-card border overflow-hidden">
+                                <div class="bg-light p-3 text-center d-flex align-items-center justify-content-center" style="height: 160px; background: radial-gradient(circle, #ffffff 60%, #f4f4f5 100%);">
+                                    <?php if (!empty($u_img)): ?>
+                                        <img src="<?= $u_img ?>" alt="<?= htmlspecialchars($u['model_name']) ?>" style="max-height: 140px; max-width: 100%; object-fit: contain;">
+                                    <?php else: ?>
+                                        <i class="fa-solid fa-mobile-screen fs-1 text-primary opacity-50"></i>
+                                    <?php endif; ?>
+                                </div>
                                 <div class="card-body d-flex flex-column">
                                     <div class="d-flex justify-content-between align-items-start mb-2">
                                         <span class="badge bg-info-subtle text-info-emphasis border"><?= htmlspecialchars($u['brand']) ?></span>
