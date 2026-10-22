@@ -12,6 +12,12 @@ $stats = [
     'pending_pickups' => 0,
     'total_trades' => 0
 ];
+$kpi = ['month_sales' => 0, 'month_repairs' => 0, 'inventory_value' => 0, 'ready_repairs' => 0, 'overdue_pickups' => 0, 'warranty_expiring' => 0];
+$trend = [];
+$low_stock_list = [];
+$top_items = [];
+$recent_sales = [];
+$recent_repairs = [];
 
 try {
     // 1. Today's sales
@@ -43,6 +49,27 @@ try {
 
     // Recent Repairs
     $recent_repairs = $pdo->query("SELECT * FROM repair_job_orders ORDER BY id DESC LIMIT 5")->fetchAll();
+
+    // --- Extended admin KPIs ---
+    $kpi['month_sales'] = (float)$pdo->query("SELECT COALESCE(SUM(total_amount),0) FROM sales WHERE YEAR(created_at)=YEAR(CURDATE()) AND MONTH(created_at)=MONTH(CURDATE())")->fetchColumn();
+    $kpi['month_repairs'] = (float)$pdo->query("SELECT COALESCE(SUM(final_cost),0) FROM repair_job_orders WHERE status='completed' AND YEAR(completed_at)=YEAR(CURDATE()) AND MONTH(completed_at)=MONTH(CURDATE())")->fetchColumn();
+    $kpi['inventory_value'] = (float)$pdo->query("SELECT COALESCE((SELECT SUM(buy_price) FROM phone_units WHERE status='in_stock'),0) + COALESCE((SELECT SUM(cost_price*stock_quantity) FROM products WHERE status!='archived'),0)")->fetchColumn();
+    $kpi['ready_repairs'] = (int)$pdo->query("SELECT COUNT(*) FROM repair_job_orders WHERE status='ready_for_pickup'")->fetchColumn();
+    $kpi['overdue_pickups'] = (int)$pdo->query("SELECT COUNT(*) FROM online_orders WHERE pickup_status IN ('pending_confirmation','ready_for_pickup') AND pickup_target_date < CURDATE()")->fetchColumn();
+    $kpi['warranty_expiring'] = (int)$pdo->query("SELECT COUNT(*) FROM repair_job_orders WHERE status='completed' AND warranty_expiry BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
+
+    // 7-day sales trend (fill missing days with zero)
+    $trend_raw = $pdo->query("SELECT DATE(created_at) d, SUM(total_amount) t FROM sales WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY DATE(created_at)")->fetchAll(PDO::FETCH_KEY_PAIR);
+    for ($i = 6; $i >= 0; $i--) {
+        $day = date('Y-m-d', strtotime("-$i day"));
+        $trend[$day] = (float)($trend_raw[$day] ?? 0);
+    }
+
+    // Low-stock alert list
+    $low_stock_list = $pdo->query("SELECT name, sku, stock_quantity, reorder_level FROM products WHERE stock_quantity <= reorder_level AND status != 'archived' ORDER BY stock_quantity ASC, name LIMIT 6")->fetchAll();
+
+    // Top sellers (last 30 days)
+    $top_items = $pdo->query("SELECT si.item_name, SUM(si.quantity) qty, SUM(si.subtotal) revenue FROM sale_items si JOIN sales s ON s.id = si.sale_id WHERE s.created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) GROUP BY si.item_name ORDER BY qty DESC, revenue DESC LIMIT 5")->fetchAll();
 
 } catch (Exception $e) {
     // Graceful error display
@@ -131,6 +158,96 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
             </div>
+
+            <?php if (has_role('admin') || has_role('staff')): ?>
+            <!-- Business KPIs -->
+            <div class="row g-3 mt-1 mb-2">
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card card-custom p-3">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Sales This Month</div>
+                        <div class="h5 fw-bolder mb-0"><?= format_currency($kpi['month_sales']) ?></div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card card-custom p-3">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Repair Revenue This Month</div>
+                        <div class="h5 fw-bolder mb-0"><?= format_currency($kpi['month_repairs']) ?></div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card card-custom p-3">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Inventory Value (at cost)</div>
+                        <div class="h5 fw-bolder mb-0"><?= format_currency($kpi['inventory_value']) ?></div>
+                    </div>
+                </div>
+                <div class="col-sm-6 col-xl-3">
+                    <div class="card card-custom p-3 <?= ($kpi['overdue_pickups'] + $kpi['ready_repairs'] + $kpi['warranty_expiring']) ? 'border border-warning' : '' ?>">
+                        <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Needs Attention</div>
+                        <div class="small mt-1">
+                            <a href="<?= BASE_URL ?>admin/pickups.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-clock text-danger me-1"></i><strong><?= $kpi['overdue_pickups'] ?></strong> overdue pick-ups</a>
+                            <a href="<?= BASE_URL ?>admin/repairs.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-box text-info me-1"></i><strong><?= $kpi['ready_repairs'] ?></strong> repairs awaiting claim</a>
+                            <a href="<?= BASE_URL ?>admin/repairs.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-shield-halved text-warning me-1"></i><strong><?= $kpi['warranty_expiring'] ?></strong> warranties expiring (7d)</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Trend, Low stock, Top sellers -->
+            <div class="row g-4 mb-4">
+                <div class="col-lg-5">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white py-3"><h6 class="fw-bold mb-0"><i class="fa-solid fa-chart-column me-2 text-primary"></i>Sales – Last 7 Days</h6></div>
+                        <div class="card-body">
+                            <?php $trend_max = max(1, max($trend ?: [0])); ?>
+                            <div class="d-flex align-items-end justify-content-between gap-2" style="height: 160px;">
+                                <?php foreach ($trend as $day => $amt): $h = max(3, round(($amt / $trend_max) * 100)); ?>
+                                    <div class="d-flex flex-column align-items-center justify-content-end flex-fill h-100" title="<?= date('M d', strtotime($day)) ?>: <?= format_currency($amt) ?>">
+                                        <div class="small text-muted" style="font-size:0.62rem;"><?= $amt > 0 ? '₱' . number_format($amt) : '' ?></div>
+                                        <div class="w-100 rounded-top" style="height: <?= $h ?>%; background: <?= $day === date('Y-m-d') ? '#db2777' : '#f9a8d4' ?>;"></div>
+                                        <div class="small text-muted mt-1" style="font-size:0.68rem;"><?= date('D', strtotime($day)) ?></div>
+                                    </div>
+                                <?php endforeach; ?>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-4">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                            <h6 class="fw-bold mb-0"><i class="fa-solid fa-triangle-exclamation me-2 text-warning"></i>Low Stock Alerts</h6>
+                            <a href="<?= BASE_URL ?>admin/inventory.php" class="btn btn-sm btn-link text-decoration-none">Manage</a>
+                        </div>
+                        <ul class="list-group list-group-flush" style="font-size:0.85rem;">
+                            <?php if (!$low_stock_list): ?>
+                                <li class="list-group-item text-muted text-center py-4">All accessories are well stocked.</li>
+                            <?php endif; ?>
+                            <?php foreach ($low_stock_list as $ls): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2"><div class="fw-semibold text-truncate"><?= htmlspecialchars($ls['name']) ?></div><small class="text-muted"><?= htmlspecialchars($ls['sku']) ?></small></div>
+                                    <span class="badge <?= $ls['stock_quantity'] == 0 ? 'bg-danger' : 'bg-warning text-dark' ?>"><?= (int)$ls['stock_quantity'] ?> left</span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+                <div class="col-lg-3">
+                    <div class="card card-custom h-100">
+                        <div class="card-header bg-white py-3"><h6 class="fw-bold mb-0"><i class="fa-solid fa-ranking-star me-2 text-success"></i>Top Sellers (30d)</h6></div>
+                        <ul class="list-group list-group-flush" style="font-size:0.85rem;">
+                            <?php if (!$top_items): ?>
+                                <li class="list-group-item text-muted text-center py-4">No sales data yet.</li>
+                            <?php endif; ?>
+                            <?php foreach ($top_items as $i => $ti): ?>
+                                <li class="list-group-item d-flex justify-content-between align-items-center">
+                                    <div class="text-truncate me-2"><span class="text-muted me-1">#<?= $i + 1 ?></span><?= htmlspecialchars($ti['item_name']) ?></div>
+                                    <span class="badge bg-light text-dark border"><?= (int)$ti['qty'] ?> sold</span>
+                                </li>
+                            <?php endforeach; ?>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <?php endif; ?>
 
             <!-- Two Column Table Views -->
             <div class="row g-4">

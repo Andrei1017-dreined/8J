@@ -256,6 +256,148 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Protective Scratch Peel-Off Film'
         ];
         $specs['gallery'] = ['magsafe_case.jpg'];
+    } elseif (stripos($sku, 'ACC-AUD-008') !== false || stripos($name, 'AirPods Pro') !== false) {
+        $specs['tagline'] = 'Active Noise Cancellation, Adaptive Audio & Personalized Spatial Audio with USB-C';
+        $specs['overview'] = 'Apple AirPods Pro (2nd generation) with MagSafe Case delivers up to 2x more Active Noise Cancellation than the previous generation. Adaptive Audio intelligently tailors noise control to your environment, while Transparency mode lets outside sound in so you can hear what is happening around you. Featuring the Apple H2 headphone chip and Apple U1 chip in the MagSafe Charging Case with speaker and lanyard loop.';
+        $specs['highlights'] = [
+            'Apple H2 Headphone Chip: Custom amplifier delivers crisp highs and rich bass',
+            'Up to 2x More Active Noise Cancellation (ANC)',
+            'Adaptive Audio & Transparency Mode with Conversation Awareness',
+            'Personalized Spatial Audio with Dynamic Head Tracking',
+            'MagSafe Charging Case (USB-C) with Built-In Speaker and Precision Finding',
+            'IP54 Dust, Sweat, and Water Resistant for both AirPods and Case',
+            'Up to 6 hours listening time with ANC on (Up to 30 hours total with case)'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Apple',
+            'SKU' => 'ACC-AUD-008',
+            'Model' => 'AirPods Pro (2nd Generation)',
+            'Chipset' => 'Apple H2 Headphone Chip + Apple U1 in Case',
+            'Connectivity' => 'Bluetooth 5.3 Low Energy',
+            'Audio Technology' => 'Custom high-excursion Apple driver, personalized spatial audio',
+            'Charging Case' => 'MagSafe (USB-C), Apple Watch charger, or Qi-certified chargers',
+            'Battery Life' => 'Up to 6 hours (single charge), up to 30 hours (with case)',
+            'Water Resistance' => 'IP54 rated (dust, sweat, and water resistant)',
+            'Warranty' => '7-Day Replacement + 1-Year Store Warranty'
+        ];
+        $specs['compatibility'] = 'Compatible with all iPhone models, Apple Watch, iPad, MacBooks, and Android smartphones via Bluetooth 5.3.';
+        $specs['package_contents'] = [
+            '1x Apple AirPods Pro (Left & Right Earbuds)',
+            '1x MagSafe Charging Case (USB-C) with Speaker',
+            '4x Pairs of Silicone Ear Tips (XS, S, M, L)',
+            '1x USB-C Charge Cable',
+            '1x Documentation & 8J Warranty Claim Slip'
+        ];
+        $specs['gallery'] = ['airpods_pro_2.png', 'airpods_3.png'];
+    } elseif (stripos($sku, 'ACC-AUD-009') !== false || stripos($name, 'AirPods (3rd') !== false) {
+        $specs['tagline'] = 'Personalized Spatial Audio, Force Sensor Controls & Up to 30 Hours Battery';
+        $specs['overview'] = 'AirPods (3rd generation) feature Personalized Spatial Audio with dynamic head tracking that places sound all around you, plus Adaptive EQ that tunes music to your ears. With an all-new contoured design and shorter stem, the force sensor lets you easily control your entertainment and calls.';
+        $specs['highlights'] = [
+            'Personalized Spatial Audio with dynamic head tracking',
+            'Adaptive EQ automatically tunes music to the shape of your ear',
+            'Contoured design with intuitive force sensor controls',
+            'Sweat and water resistant (IPX4 rating)',
+            'Up to 6 hours of listening time with one charge (up to 30 hours with case)',
+            'Lightning / MagSafe fast charging support'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Apple',
+            'SKU' => 'ACC-AUD-009',
+            'Model' => 'AirPods (3rd Generation)',
+            'Chipset' => 'Apple H1 Headphone Chip',
+            'Connectivity' => 'Bluetooth 5.0',
+            'Battery Life' => 'Up to 6 hours listening time, 30 hours with case',
+            'Charging' => 'MagSafe, Qi wireless, or Lightning',
+            'Resistance' => 'IPX4 sweat and water resistant',
+            'Warranty' => '7-Day Replacement Guarantee'
+        ];
+        $specs['compatibility'] = 'iPhone 8 through iPhone 15 series, iPad, Apple Watch, and all Bluetooth devices.';
+        $specs['package_contents'] = [
+            '1x Apple AirPods (3rd generation) Earbuds',
+            '1x MagSafe Charging Case',
+            '1x Lightning to USB-C Cable',
+            '1x Quick Start Guide'
+        ];
+        $specs['gallery'] = ['airpods_3.png', 'airpods_pro_2.png'];
+    } elseif (stripos($sku, 'ACC-CHG-010') !== false || stripos($name, 'MagSafe Fast Wireless Charger') !== false) {
+        $specs['tagline'] = 'Snap-On 15W Magnetic Fast Wireless Charger for iPhone 12 to 15 Series';
+        $specs['overview'] = 'The Apple MagSafe Charger makes wireless charging a snap. The perfectly aligned magnets attach to your iPhone 12, 13, 14, or 15 to provide faster wireless charging up to 15W. Maintains compatibility with Qi charging so it can be used to wirelessly charge iPhone 8 or later, as well as AirPods models with a wireless charging case.';
+        $specs['highlights'] = [
+            'Precision N52 Neodymium Magnetic Alignment for 100% stable contact',
+            'High-Speed 15W Peak Wireless Output for compatible iPhones',
+            'Backwards compatible with Qi-enabled smartphones (iPhone 8+, AirPods)',
+            'Integrated 1-meter USB-C cable for convenient reach',
+            'Smart thermal management prevents phone overheating during fast charging'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Apple',
+            'SKU' => 'ACC-CHG-010',
+            'Max Output' => '15W (requires 20W USB-C Power Adapter)',
+            'Input Connector' => 'USB Type-C',
+            'Cable Length' => '1.0 Meter Integrated Heavy-Duty Cable',
+            'Material' => 'Anodized Aluminum Shell with Soft-Touch Pad',
+            'Warranty' => '7-Day Replacement Guarantee'
+        ];
+        $specs['compatibility'] = 'iPhone 15 / 15 Pro / 15 Pro Max, iPhone 14 series, iPhone 13 series, iPhone 12 series, and AirPods with MagSafe Case.';
+        $specs['package_contents'] = [
+            '1x Apple MagSafe Charger with 1m Integrated USB-C Cable',
+            '1x User Manual & 8J Authenticity Tag'
+        ];
+        $specs['gallery'] = ['apple_magsafe_charger.png', 'apple_magsafe_battery.png'];
+    } elseif (stripos($sku, 'ACC-PWR-011') !== false || stripos($name, 'MagSafe Magnetic Battery Pack') !== false) {
+        $specs['tagline'] = 'Compact Magnetic Wireless Battery Pack - Snap & Go Everyday Power';
+        $specs['overview'] = 'Attaching the MagSafe Battery Pack is a breeze. Its compact, intuitive design makes on-the-go charging easy. The perfectly aligned magnets keep it attached to your iPhone 12, 13, 14, or 15 providing safe and reliable wireless charging automatically without pressing buttons.';
+        $specs['highlights'] = [
+            'Snap-and-Charge: Zero cables required while attached to your phone',
+            'Up to 70% additional charge on iPhone 12/13/14/15 models',
+            'Pass-Through Charging: Charges iPhone and battery pack simultaneously with 20W plug',
+            'iOS Battery Widget Integration: View real-time battery percentage on lock screen',
+            'Silky soft-touch matte exterior finish with rounded edges'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Apple',
+            'SKU' => 'ACC-PWR-011',
+            'Capacity' => '5,000mAh Lithium-Polymer',
+            'Wireless Output' => '5W on-the-go / Up to 15W when connected to 20W+ adapter',
+            'Input Port' => 'Lightning Connector (Pass-Through Charge)',
+            'Warranty' => '7-Day Replacement Guarantee'
+        ];
+        $specs['compatibility'] = 'iPhone 12 mini to iPhone 15 Pro Max, and all MagSafe phone cases.';
+        $specs['package_contents'] = [
+            '1x Apple MagSafe Magnetic Battery Pack 5000mAh',
+            '1x Quick Start Guide'
+        ];
+        $specs['gallery'] = ['apple_magsafe_battery.png', 'apple_magsafe_charger.png'];
+    } elseif (stripos($sku, 'ACC-DEV-012') !== false || stripos($name, 'Watch Ultra') !== false) {
+        $specs['tagline'] = '49mm Aerospace Titanium Case, 3000 Nits Brightness & Precision Dual GPS';
+        $specs['overview'] = 'Apple Watch Ultra 2 is crafted for unprecedented performance. The lightweight titanium case is rugged and corrosion resistant, and it is raised to protect the sapphire front crystal from edge impacts. Powered by the S9 SiP with a 3000-nit Always-On Retina display and innovative double tap gesture.';
+        $specs['highlights'] = [
+            '49mm Aerospace-Grade Titanium Case with flat sapphire crystal screen',
+            'Ultra-Bright 3,000 Nits Always-On Retina Display with Night Mode',
+            'Apple S9 SiP 64-bit Dual-Core Processor + 4-Core Neural Engine',
+            'Customizable International Orange Action Button',
+            'Precision Dual-Frequency GPS (L1 and L5) with Trackback Compass',
+            '100m Water Resistance & EN13319 Certified for Recreational Scuba to 40m',
+            'Up to 36 hours normal use (Up to 72 hours in Low Power Mode)'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'Apple',
+            'SKU' => 'ACC-DEV-012',
+            'Case Size' => '49mm x 44mm x 14.4mm, 61.4g',
+            'Connectivity' => 'LTE & UMTS, Wi-Fi 4 (802.11n), Bluetooth 5.3, UWB Gen 2',
+            'Sensors' => 'Depth gauge, water temperature, ECG, blood oxygen, optical heart rate',
+            'Battery Life' => '36 to 72 Hours',
+            'Operating System' => 'watchOS',
+            'Warranty' => '1-Year Store Service Warranty + 7-Day Replacement'
+        ];
+        $specs['compatibility'] = 'Requires iPhone Xs or later with iOS 17 or later.';
+        $specs['package_contents'] = [
+            '1x Apple Watch Ultra 2 (49mm Titanium Case)',
+            '1x High-Durability Loop / Ocean Band',
+            '1x Apple Watch Magnetic Fast Charger to USB-C Cable (1m)',
+            '1x Official Documentation & 8J Warranty Slip'
+        ];
+        $specs['gallery'] = ['apple_watch_ultra.png'];
     } elseif (stripos($sku, 'ACC-AUD-007') !== false || stripos($name, 'Lenovo') !== false) {
         $specs['tagline'] = 'Ultra-Light True Wireless Stereo Earbuds with 13mm Graphene Bass Drivers';
         $specs['overview'] = 'The Lenovo LP40 Pro delivers crystal-clear audio fidelity and punchy bass in an ultra-compact package. Equipped with Bluetooth 5.1 and dual host transmission, both earbuds connect simultaneously for low latency and zero dropouts. Features intuitive touch controls and an ergonomic semi-in-ear silicone seal for all-day comfort.';
@@ -368,10 +510,138 @@ function get_product_full_specs($item, $type = 'product') {
                 '1x SIM Ejector Tool & Official Warranty Booklet'
             ];
             $specs['gallery'] = ['infinix_smart20_orange.png', 'infinix_smart20_silver.png'];
+        } elseif (stripos($name, 'iPhone 15 Pro Max') !== false || stripos($name, '15 Pro Max') !== false) {
+            $specs['tagline'] = 'A17 Pro 3nm Chip, Aerospace Titanium Design & 5x Optical Telephoto Zoom';
+            $specs['highlights'] = [
+                'Forged in Titanium: Lightest, strongest Pro models ever from Apple',
+                'Super Retina XDR 6.7" OLED with ProMotion 120Hz & Always-On Display',
+                'Apple A17 Pro Chip (3nm) with 6-Core GPU supporting Hardware Ray Tracing',
+                'Customizable Action Button: Instant shortcut to Silent, Camera, or Torch',
+                '48MP Main Camera + 12MP Ultra-Wide + 5x Optical Periscope Telephoto Lens',
+                'USB-C 3.0 Port supporting up to 10Gbps high-speed file transfers',
+                'Certified Grade A unit with 98% battery health and clean iCloud'
+            ];
+            $specs['technical_details']['Processor'] = 'Apple A17 Pro (3nm Hexa-Core)';
+            $specs['technical_details']['Display'] = '6.7-inch Super Retina XDR OLED (2796 x 1290, 120Hz ProMotion, 2000 nits)';
+            $specs['technical_details']['Rear Cameras'] = '48MP (f/1.8) Main + 12MP (f/2.2) Ultra-Wide + 12MP (f/2.8) 5x Telephoto';
+            $specs['technical_details']['Front Camera'] = '12MP TrueDepth (f/1.9) with Autofocus and 4K60 Dolby Vision';
+            $specs['technical_details']['Chassis'] = 'Grade 5 Titanium Frame with Textured Matte Glass Back';
+            $specs['technical_details']['Connector'] = 'USB Type-C (USB 3, up to 10Gbps) with DisplayPort';
+            $specs['gallery'] = ['iphone_15_pro_natural.png', 'iphone_15_pro_blue.png', 'iphone_15_pro_black.png', 'iphone_15_pro_white.png'];
+        } elseif (stripos($name, 'iPhone 15 Pro') !== false) {
+            $specs['tagline'] = 'A17 Pro 3nm Silicon, Grade 5 Titanium Body & Dynamic Island';
+            $specs['highlights'] = [
+                'Aerospace-Grade Titanium Frame: Featherweight durability with contoured edges',
+                'Super Retina XDR 6.1" OLED with 120Hz ProMotion & Always-On Screen',
+                'A17 Pro Flagship Processor: Next-generation gaming performance with ray tracing',
+                'Configurable Action Button with haptic feedback',
+                'Pro 48MP Camera System with 24MP default ultra-high-resolution shooting',
+                'USB-C Port with fast charging & reverse charging support',
+                'Full 30-day 8J store service warranty + 7-day direct swap'
+            ];
+            $specs['technical_details']['Processor'] = 'Apple A17 Pro (3nm Hexa-Core)';
+            $specs['technical_details']['Display'] = '6.1-inch Super Retina XDR OLED (2556 x 1179, 120Hz ProMotion, 2000 nits)';
+            $specs['technical_details']['Rear Cameras'] = '48MP Main + 12MP Ultra-Wide + 12MP 3x Telephoto Optical Zoom';
+            $specs['technical_details']['Front Camera'] = '12MP TrueDepth Camera with Face ID';
+            $specs['technical_details']['Connector'] = 'USB Type-C (USB 3)';
+            $specs['gallery'] = ['iphone_15_pro_blue.png', 'iphone_15_pro_natural.png', 'iphone_15_pro_black.png', 'iphone_15_pro_white.png'];
+        } elseif (stripos($name, 'iPhone 15') !== false) {
+            $specs['tagline'] = 'Dynamic Island, 48MP Main Camera, Color-Infused Glass & USB-C';
+            $specs['highlights'] = [
+                'Dynamic Island: Bubbles up alerts and Live Activities so you never miss them',
+                '48MP Main Camera with 2x Telephoto: 4x resolution of iPhone 14',
+                'A16 Bionic Chip: Proven pro-level computational photography and smooth gaming',
+                'Industry-First Color-Infused Back Glass with textured matte finish',
+                'All-Day Battery Life with universal USB-C charging simplicity',
+                'Pre-owned Grade A unit inspected and certified 100% genuine'
+            ];
+            $specs['technical_details']['Processor'] = 'Apple A16 Bionic (4nm Hexa-Core)';
+            $specs['technical_details']['Display'] = '6.1-inch Super Retina XDR OLED (2556 x 1179, 2000 nits peak)';
+            $specs['technical_details']['Rear Cameras'] = '48MP (f/1.6) Main + 12MP Ultra-Wide with 2x Optical Telephoto';
+            $specs['technical_details']['Front Camera'] = '12MP TrueDepth with Autofocus';
+            $specs['technical_details']['Connector'] = 'USB Type-C (USB 2.0)';
+            $specs['gallery'] = ['iphone_15_pink.png', 'iphone_15_blue.png', 'iphone_15_black.png'];
+        } elseif (stripos($name, 'iPhone 14 Pro') !== false) {
+            $specs['tagline'] = 'Dynamic Island, Always-On 120Hz ProMotion Display & 48MP Quad-Pixel Sensor';
+            $specs['highlights'] = [
+                'Magical Dynamic Island: Seamless blend of hardware and software notifications',
+                '48MP Quad-Pixel Main Camera: Up to 4x detail in ProRAW shooting',
+                'Action Mode for super smooth handheld video stabilization',
+                'Super Retina XDR 6.1" OLED with 120Hz ProMotion & Always-On display',
+                'Surgical-Grade Stainless Steel Frame with Ceramic Shield front',
+                'A16 Bionic 6-Core processor with 5-Core GPU'
+            ];
+            $specs['technical_details']['Processor'] = 'Apple A16 Bionic (4nm Hexa-Core)';
+            $specs['technical_details']['Display'] = '6.1-inch Super Retina XDR (2556 x 1179, 120Hz ProMotion)';
+            $specs['technical_details']['Rear Cameras'] = '48MP Main + 12MP Ultra-Wide + 12MP 3x Optical Telephoto';
+            $specs['technical_details']['Front Camera'] = '12MP TrueDepth with Autofocus';
+            $specs['gallery'] = ['iphone_14_pro_purple.png', 'iphone_14_pro_spaceblack.png', 'iphone_14_pro_gold.png'];
+        } elseif (stripos($name, 'iPhone 14') !== false) {
+            $specs['tagline'] = 'Crash Detection, Cinematic 4K Video & Upgraded All-Day Endurance';
+            $specs['highlights'] = [
+                'Dual 12MP Advanced Camera System with Photonic Engine for low-light detail',
+                'Cinematic Mode in 4K Dolby Vision at up to 30 fps',
+                'Action Mode for gimbal-like smooth handheld video recording',
+                'A15 Bionic chip with 5-core GPU for ultra-fluid graphics and gaming',
+                'Ceramic Shield front glass tougher than any smartphone glass',
+                'Pre-owned Grade A certified unit with original battery health'
+            ];
+            $specs['gallery'] = ['iphone_14_midnight.png', 'iphone_14_starlight.png', 'iphone_14_blue.png'];
+        } elseif (stripos($name, 'iPhone 13 Pro') !== false) {
+            $specs['tagline'] = 'ProMotion 120Hz Super Retina XDR, Macro Photography & 3x Optical Zoom';
+            $specs['highlights'] = [
+                'ProMotion Technology with adaptive refresh rates up to 120Hz',
+                'Macro Photography & Videography down to 2cm distance',
+                'Triple 12MP Pro Camera System with 3x Optical Zoom Telephoto',
+                'A15 Bionic chip with 5-core GPU for lightning-fast performance',
+                'Surgical-grade stainless steel with durable Ceramic Shield front',
+                'All-day battery life with 100% functional 3uTools score'
+            ];
+            $specs['gallery'] = ['iphone_13_pro_sierra.png', 'iphone_13_pro_graphite.png'];
         } elseif (stripos($name, 'iPhone 13') !== false) {
-            $specs['gallery'] = ['iphone_13.jpg', 'apple_13_midnight.jpg', 'apple_13_blue.jpg', 'gsm_iphone13.jpg'];
+            $specs['tagline'] = 'A15 Bionic Speed, Sensor-Shift OIS & Cinematic Depth of Field';
+            $specs['highlights'] = [
+                'Diagonal Dual 12MP Camera system with Sensor-Shift Optical Image Stabilization',
+                'Cinematic mode automatically shifts focus between subjects in 1080p',
+                'Super Retina XDR 6.1" OLED with 28% brighter sunlight readability (800 nits)',
+                'A15 Bionic chip with 4-core GPU and 16-core Neural Engine',
+                'Ceramic Shield front, aerospace-grade aluminum edges, IP68 water resistance',
+                'Complete store warranty certificate from 8J Tanauan branch'
+            ];
+            $specs['gallery'] = ['iphone_13_midnight.png', 'iphone_13_blue.png', 'iphone_13_pink.png', 'iphone_13_starlight.png'];
+        } elseif (stripos($name, 'iPhone 12 Pro') !== false) {
+            $specs['tagline'] = 'LiDAR Scanner, Pacific Blue Stainless Steel & Dolby Vision HDR Recording';
+            $specs['highlights'] = [
+                'LiDAR Scanner for instant AR and Night Mode Portrait autofocus',
+                'Triple 12MP Camera system with Night mode on all lenses',
+                'Apple ProRAW support for professional creative control',
+                'A14 Bionic: First 5-nanometer chip in a smartphone',
+                'Ceramic Shield front with 4x better drop performance',
+                'MagSafe compatibility for 15W snap-on wireless charging'
+            ];
+            $specs['gallery'] = ['iphone_12_pro_pacific.png', 'iphone_12_black.png'];
+        } elseif (stripos($name, 'iPhone 12') !== false) {
+            $specs['tagline'] = 'Super Retina XDR OLED, A14 Bionic & MagSafe Fast Snap Charging';
+            $specs['highlights'] = [
+                'Super Retina XDR OLED display with edge-to-edge vibrant colors',
+                'A14 Bionic chip with 16-core Neural Engine for billions of operations per second',
+                'Dual 12MP Ultra-Wide and Wide cameras with Night mode on both',
+                'MagSafe ecosystem support for quick snap accessories and wireless chargers',
+                'Ceramic Shield front cover and aerospace-grade aluminum enclosure',
+                '100% inspected, factory unlocked, clean account status'
+            ];
+            $specs['gallery'] = ['iphone_12_purple.png', 'iphone_12_black.png', 'iphone_12_white.png'];
         } elseif (stripos($name, 'iPhone 11') !== false) {
-            $specs['gallery'] = ['iphone_11.jpg', 'apple_11_white.jpg'];
+            $specs['tagline'] = 'Dual 12MP Ultra-Wide Camera, All-Day Battery & Liquid Retina Display';
+            $specs['highlights'] = [
+                'Dual 12MP Ultra-Wide and Wide cameras with Night mode and 4K60 video',
+                '6.1-inch Liquid Retina HD LCD with True Tone color management',
+                'A13 Bionic chip with 3rd-generation Neural Engine',
+                'Face ID for secure authentication and Apple Pay',
+                'All-day battery life with fast-charge capability',
+                'Includes 8J charging adapter and cable with store warranty'
+            ];
+            $specs['gallery'] = ['iphone_11_white.png', 'iphone_11_purple.png', 'iphone_11_black.png'];
         } elseif (stripos($name, 'Galaxy S22') !== false) {
             $specs['gallery'] = ['galaxy_s22.jpg', 'galaxy_s22.png'];
         } elseif (stripos($name, 'Redmi Note 12') !== false) {

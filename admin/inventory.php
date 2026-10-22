@@ -5,6 +5,65 @@ require_role('admin', 'staff');
 
 $message = '';
 
+// Reject any POST without a valid CSRF token
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && !csrf_valid()) {
+    $_POST = [];
+    $message = "Error: Security token expired. Please reload the page and try again.";
+}
+
+// Handle Edit Accessory
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'edit_product') {
+    $id = (int)($_POST['product_id'] ?? 0);
+    $name = sanitize($_POST['name'] ?? '');
+    try {
+        if ($id <= 0 || $name === '') throw new Exception("Product name is required.");
+        $stmt = $pdo->prepare("UPDATE products SET category_id = ?, name = ?, brand = ?, cost_price = ?, selling_price = ?, reorder_level = ?, description = ? WHERE id = ?");
+        $stmt->execute([
+            (int)($_POST['category_id'] ?? 1), $name, sanitize($_POST['brand'] ?? ''),
+            max(0, (float)($_POST['cost_price'] ?? 0)), max(0, (float)($_POST['selling_price'] ?? 0)),
+            max(0, (int)($_POST['reorder_level'] ?? 5)), sanitize($_POST['description'] ?? ''), $id
+        ]);
+        audit_log('Updated Accessory', 'Inventory', "Edited product #{$id} '{$name}'");
+        $message = "Accessory updated successfully!";
+    } catch (Exception $e) {
+        $message = "Error updating product: " . $e->getMessage();
+    }
+}
+
+// Handle Archive / Restore Accessory (admin only)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_archive') {
+    $id = (int)($_POST['product_id'] ?? 0);
+    try {
+        if (!has_role('admin')) throw new Exception("Only administrators can archive products.");
+        $pdo->prepare("UPDATE products SET status = IF(status = 'archived', 'available', 'archived') WHERE id = ?")->execute([$id]);
+        $st = $pdo->prepare("SELECT name, status FROM products WHERE id = ?");
+        $st->execute([$id]);
+        $row = $st->fetch();
+        audit_log($row['status'] === 'archived' ? 'Archived Accessory' : 'Restored Accessory', 'Inventory', "Product #{$id} '{$row['name']}'");
+        $message = "'{$row['name']}' " . ($row['status'] === 'archived' ? 'archived and hidden from the storefront.' : 'restored to the catalog.');
+    } catch (Exception $e) {
+        $message = "Error: " . $e->getMessage();
+    }
+}
+
+// Handle Update Phone Unit (price, condition, status, notes)
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_unit') {
+    $id = (int)($_POST['unit_id'] ?? 0);
+    $allowed_status = ['in_stock', 'reserved', 'sold', 'traded', 'under_repair'];
+    $allowed_cond = ['Brand New', 'Pre-Owned Grade A', 'Pre-Owned Grade B', 'Pre-Owned Grade C'];
+    $status = in_array($_POST['status'] ?? '', $allowed_status, true) ? $_POST['status'] : 'in_stock';
+    $cond = in_array($_POST['unit_condition'] ?? '', $allowed_cond, true) ? $_POST['unit_condition'] : 'Pre-Owned Grade A';
+    try {
+        if ($id <= 0) throw new Exception("Invalid unit.");
+        $stmt = $pdo->prepare("UPDATE phone_units SET selling_price = ?, unit_condition = ?, battery_health = ?, status = ?, notes = ? WHERE id = ?");
+        $stmt->execute([max(0, (float)($_POST['selling_price'] ?? 0)), $cond, min(100, max(0, (int)($_POST['battery_health'] ?? 100))), $status, sanitize($_POST['notes'] ?? ''), $id]);
+        audit_log('Updated Phone Unit', 'Inventory', "Unit #{$id} set to {$status}, condition {$cond}");
+        $message = "Phone unit updated successfully!";
+    } catch (Exception $e) {
+        $message = "Error updating unit: " . $e->getMessage();
+    }
+}
+
 // Handle Add Accessory
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'add_product') {
     $category_id = (int)($_POST['category_id'] ?? 1);
@@ -21,6 +80,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt = $pdo->prepare("INSERT INTO products (category_id, sku, name, brand, cost_price, selling_price, stock_quantity, reorder_level, description) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$category_id, $sku, $name, $brand, $cost_price, $selling_price, $stock_quantity, $reorder_level, $description]);
         $message = "Accessory added successfully!";
+        audit_log('Added Accessory', 'Inventory', "Added '{$name}' (SKU {$sku}), qty {$stock_quantity}");
     } catch (Exception $e) {
         $message = "Error adding product: " . $e->getMessage();
     }
@@ -44,6 +104,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $stmt = $pdo->prepare("INSERT INTO phone_units (brand, model_name, storage_capacity, color, imei_1, imei_2, unit_condition, battery_health, buy_price, selling_price, notes) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
         $stmt->execute([$brand, $model_name, $storage, $color, $imei_1, $imei_2, $condition, $battery_health, $buy_price, $selling_price, $notes]);
         $message = "Phone unit with IMEI registered successfully!";
+        audit_log('Registered Phone Unit', 'Inventory', "{$brand} {$model_name} IMEI {$imei_1}");
     } catch (Exception $e) {
         $message = "Error adding phone unit: " . $e->getMessage();
     }
@@ -58,6 +119,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $upd = $pdo->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity + ?) WHERE id = ?");
             $upd->execute([$qty_change, $product_id]);
             $message = "Stock level updated successfully (" . ($qty_change > 0 ? "+{$qty_change}" : "{$qty_change}") . " units)!";
+            audit_log('Adjusted Stock', 'Inventory', "Product #{$product_id} changed by {$qty_change}");
         } catch (Exception $e) {
             $message = "Error adjusting stock: " . $e->getMessage();
         }
@@ -73,7 +135,7 @@ $products = $pdo->query("SELECT p.*, c.name as category_name FROM products p LEF
 // Fetch phone units
 $phone_units = $pdo->query("SELECT * FROM phone_units ORDER BY id DESC")->fetchAll();
 
-$low_stock_accessories = array_filter($products, fn($p) => $p['stock_quantity'] <= $p['reorder_level']);
+$low_stock_accessories = array_filter($products, fn($p) => $p['status'] !== 'archived' && $p['stock_quantity'] <= $p['reorder_level']);
 $low_stock_count = count($low_stock_accessories);
 
 require_once __DIR__ . '/../includes/header.php';
@@ -165,6 +227,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             <th class="text-center">Stock</th>
                                             <th>Status</th>
                                             <th class="text-center">Restock (+Qty)</th>
+                                            <th class="text-end">Manage</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -197,18 +260,38 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <td class="text-center">
                                                     <div class="btn-group btn-group-sm">
                                                         <form method="POST" style="display:inline;">
+                                                            <?= csrf_field() ?>
                                                             <input type="hidden" name="action" value="adjust_stock">
                                                             <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
                                                             <input type="hidden" name="quantity_change" value="5">
                                                             <button type="submit" class="btn btn-outline-dark btn-sm py-0 px-2" title="Restock +5 units">+5</button>
                                                         </form>
                                                         <form method="POST" style="display:inline;">
+                                                            <?= csrf_field() ?>
                                                             <input type="hidden" name="action" value="adjust_stock">
                                                             <input type="hidden" name="product_id" value="<?= $prod['id'] ?>">
                                                             <input type="hidden" name="quantity_change" value="10">
                                                             <button type="submit" class="btn btn-outline-dark btn-sm py-0 px-2" title="Restock +10 units">+10</button>
                                                         </form>
                                                     </div>
+                                                </td>
+                                                <td class="text-end text-nowrap">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" title="Edit" data-bs-toggle="modal" data-bs-target="#editProductModal"
+                                                        data-product='<?= htmlspecialchars(json_encode([
+                                                            'id' => (int)$prod['id'], 'name' => $prod['name'], 'brand' => $prod['brand'], 'category_id' => (int)$prod['category_id'],
+                                                            'cost_price' => $prod['cost_price'], 'selling_price' => $prod['selling_price'],
+                                                            'reorder_level' => (int)$prod['reorder_level'], 'description' => $prod['description']
+                                                        ]), ENT_QUOTES) ?>'><i class="fa-solid fa-pen"></i></button>
+                                                    <?php if (has_role('admin')): ?>
+                                                        <form method="POST" style="display:inline;" onsubmit="return confirm('<?= $prod['status'] === 'archived' ? 'Restore' : 'Archive' ?> this product?');">
+                                                            <?= csrf_field() ?>
+                                                            <input type="hidden" name="action" value="toggle_archive">
+                                                            <input type="hidden" name="product_id" value="<?= (int)$prod['id'] ?>">
+                                                            <button class="btn btn-sm py-0 px-2 <?= $prod['status'] === 'archived' ? 'btn-outline-success' : 'btn-outline-danger' ?>" title="<?= $prod['status'] === 'archived' ? 'Restore' : 'Archive' ?>">
+                                                                <i class="fa-solid <?= $prod['status'] === 'archived' ? 'fa-box-open' : 'fa-box-archive' ?>"></i>
+                                                            </button>
+                                                        </form>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -242,6 +325,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             <th class="text-end">Selling Price</th>
                                             <th>Source</th>
                                             <th>Status</th>
+                                            <th class="text-end">Manage</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -279,6 +363,14 @@ require_once __DIR__ . '/../includes/header.php';
                                                         <span class="badge bg-light text-dark border"><?= ucfirst($unit['status']) ?></span>
                                                     <?php endif; ?>
                                                 </td>
+                                                <td class="text-end">
+                                                    <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" title="Edit unit" data-bs-toggle="modal" data-bs-target="#editUnitModal"
+                                                        data-unit='<?= htmlspecialchars(json_encode([
+                                                            'id' => (int)$unit['id'], 'title' => $unit['brand'] . ' ' . $unit['model_name'] . ' (' . $unit['imei_1'] . ')',
+                                                            'selling_price' => $unit['selling_price'], 'unit_condition' => $unit['unit_condition'],
+                                                            'battery_health' => $unit['battery_health'], 'status' => $unit['status'], 'notes' => $unit['notes']
+                                                        ]), ENT_QUOTES) ?>'><i class="fa-solid fa-pen"></i></button>
+                                                </td>
                                             </tr>
                                         <?php endforeach; ?>
                                     </tbody>
@@ -292,11 +384,120 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<!-- Modal: Edit Accessory -->
+<div class="modal fade" id="editProductModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="edit_product">
+                <input type="hidden" name="product_id" id="ep_id">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Accessory</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row g-2 mb-3">
+                        <div class="col-8"><label class="form-label small fw-semibold">Name</label><input type="text" name="name" id="ep_name" class="form-control" required></div>
+                        <div class="col-4"><label class="form-label small fw-semibold">Brand</label><input type="text" name="brand" id="ep_brand" class="form-control"></div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-semibold">Category</label>
+                        <select name="category_id" id="ep_category" class="form-select">
+                            <?php foreach ($categories as $cat): ?>
+                                <option value="<?= (int)$cat['id'] ?>"><?= htmlspecialchars($cat['name']) ?></option>
+                            <?php endforeach; ?>
+                        </select>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4"><label class="form-label small fw-semibold">Cost (₱)</label><input type="number" step="0.01" min="0" name="cost_price" id="ep_cost" class="form-control"></div>
+                        <div class="col-4"><label class="form-label small fw-semibold">Selling (₱)</label><input type="number" step="0.01" min="0" name="selling_price" id="ep_sell" class="form-control"></div>
+                        <div class="col-4"><label class="form-label small fw-semibold">Reorder Lvl</label><input type="number" min="0" name="reorder_level" id="ep_reorder" class="form-control"></div>
+                    </div>
+                    <div class="mb-0"><label class="form-label small fw-semibold">Description</label><textarea name="description" id="ep_desc" class="form-control" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Modal: Edit Phone Unit -->
+<div class="modal fade" id="editUnitModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <form method="POST" action="">
+                <?= csrf_field() ?>
+                <input type="hidden" name="action" value="update_unit">
+                <input type="hidden" name="unit_id" id="eu_id">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold">Edit Phone Unit</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3" id="eu_title"></p>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6"><label class="form-label small fw-semibold">Selling Price (₱)</label><input type="number" step="0.01" min="0" name="selling_price" id="eu_price" class="form-control"></div>
+                        <div class="col-6"><label class="form-label small fw-semibold">Battery Health (%)</label><input type="number" min="0" max="100" name="battery_health" id="eu_battery" class="form-control"></div>
+                    </div>
+                    <div class="row g-2 mb-3">
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Condition</label>
+                            <select name="unit_condition" id="eu_cond" class="form-select">
+                                <option>Brand New</option><option>Pre-Owned Grade A</option><option>Pre-Owned Grade B</option><option>Pre-Owned Grade C</option>
+                            </select>
+                        </div>
+                        <div class="col-6">
+                            <label class="form-label small fw-semibold">Status</label>
+                            <select name="status" id="eu_status" class="form-select">
+                                <option value="in_stock">In Stock</option><option value="reserved">Reserved</option>
+                                <option value="under_repair">Under Repair</option><option value="sold">Sold</option><option value="traded">Traded</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mb-0"><label class="form-label small fw-semibold">Notes</label><textarea name="notes" id="eu_notes" class="form-control" rows="2"></textarea></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+document.getElementById('editProductModal').addEventListener('show.bs.modal', function (e) {
+    const p = JSON.parse(e.relatedTarget.getAttribute('data-product'));
+    document.getElementById('ep_id').value = p.id;
+    document.getElementById('ep_name').value = p.name;
+    document.getElementById('ep_brand').value = p.brand || '';
+    document.getElementById('ep_category').value = p.category_id;
+    document.getElementById('ep_cost').value = p.cost_price;
+    document.getElementById('ep_sell').value = p.selling_price;
+    document.getElementById('ep_reorder').value = p.reorder_level;
+    document.getElementById('ep_desc').value = p.description || '';
+});
+document.getElementById('editUnitModal').addEventListener('show.bs.modal', function (e) {
+    const u = JSON.parse(e.relatedTarget.getAttribute('data-unit'));
+    document.getElementById('eu_id').value = u.id;
+    document.getElementById('eu_title').textContent = u.title;
+    document.getElementById('eu_price').value = u.selling_price;
+    document.getElementById('eu_battery').value = u.battery_health ?? 100;
+    document.getElementById('eu_cond').value = u.unit_condition;
+    document.getElementById('eu_status').value = u.status;
+    document.getElementById('eu_notes').value = u.notes || '';
+});
+</script>
 <!-- Modal: Add Accessory -->
 <div class="modal fade" id="addAccessoryModal" tabindex="-1">
     <div class="modal-dialog">
         <div class="modal-content">
             <form method="POST" action="">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="add_product">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Add Retail Accessory</h5>
@@ -360,6 +561,7 @@ require_once __DIR__ . '/../includes/header.php';
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <form method="POST" action="">
+                <?= csrf_field() ?>
                 <input type="hidden" name="action" value="add_unit">
                 <div class="modal-header">
                     <h5 class="modal-title fw-bold">Register Smartphone Unit (IMEI Tracking)</h5>

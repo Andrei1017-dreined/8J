@@ -1,7 +1,6 @@
 /**
  * 8J Cellphone & Accessories IMS
- * Award-Winning UI Transitions & Animation Framework
- * Designed with modern micro-interactions & cubic-bezier easing
+ * High-Performance 120fps UI Transitions, Smooth Scroll & Micro-Interaction Framework
  */
 
 :root {
@@ -11,105 +10,126 @@
     --ease-soft: cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
-/* 1. Global Smooth Scrolling & Sleek Scrollbars */
+/* 1. Sleek Scrollbars & Zero-Conflict Native Scroll Base */
 html {
-    scroll-behavior: smooth;
+    scroll-behavior: auto !important; /* Controlled by inertial rAF smooth scroller for butter-smooth wheel physics */
+    overflow-x: hidden;
 }
 
 ::-webkit-scrollbar {
-    width: 7px;
-    height: 7px;
+    width: 8px;
+    height: 8px;
 }
 ::-webkit-scrollbar-track {
-    background: #f4f4f5;
+    background: #fdf2f8;
 }
 ::-webkit-scrollbar-thumb {
-    background: #a1a1aa;
+    background: #f472b6;
     border-radius: 9999px;
+    border: 2px solid #fdf2f8;
 }
 ::-webkit-scrollbar-thumb:hover {
-    background: #71717a;
+    background: #db2777;
 }
 
-/* 2. Glassmorphism Top Navigation */
+/* Top GPU-Accelerated Scroll Progress Bar */
+#scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, #db2777 0%, #f43f5e 50%, #fbbf24 100%);
+    transform-origin: 0 50%;
+    transform: scaleX(0) translateZ(0);
+    z-index: 100000;
+    pointer-events: none;
+    will-change: transform;
+}
+
+/* 2. High-Performance Top Navigation (Zero Scroll Repaint Lag) */
 .navbar-custom {
-    backdrop-filter: blur(16px) saturate(180%) !important;
-    -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
-    background-color: rgba(255, 255, 255, 0.85) !important;
-    border-bottom: 1px solid rgba(228, 228, 231, 0.8) !important;
-    transition: background-color 0.3s var(--ease-out-expo), box-shadow 0.3s var(--ease-out-expo);
+    background-color: rgba(255, 255, 255, 0.96) !important;
+    border-bottom: 1px solid rgba(252, 231, 243, 0.95) !important;
+    transition: background-color 0.25s var(--ease-out-expo), box-shadow 0.25s var(--ease-out-expo);
+    transform: translateZ(0);
 }
 .navbar-custom.scrolled {
-    background-color: rgba(255, 255, 255, 0.95) !important;
-    box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.08) !important;
+    background-color: #ffffff !important;
+    box-shadow: 0 10px 30px -10px rgba(219, 39, 119, 0.14) !important;
 }
 
-/* 3. Page Staggered Entry Animations */
+/* 3. Page Staggered Entry Animations (Cleaned up after completion) */
 @keyframes revealUp {
     from {
         opacity: 0;
-        transform: translateY(24px);
+        transform: translate3d(0, 18px, 0);
     }
     to {
         opacity: 1;
-        transform: translateY(0);
+        transform: translate3d(0, 0, 0);
     }
 }
 
 @keyframes revealFade {
-    from {
-        opacity: 0;
-    }
-    to {
-        opacity: 1;
-    }
+    from { opacity: 0; }
+    to { opacity: 1; }
 }
 
 @keyframes revealScale {
     from {
         opacity: 0;
-        transform: scale(0.96) translateY(12px);
+        transform: scale3d(0.97, 0.97, 1) translate3d(0, 10px, 0);
     }
     to {
         opacity: 1;
-        transform: scale(1) translateY(0);
+        transform: scale3d(1, 1, 1) translate3d(0, 0, 0);
     }
 }
 
 .animate-reveal {
-    animation: revealUp 0.65s var(--ease-out-expo) both;
+    animation: revealUp 0.5s var(--ease-out-expo) forwards;
 }
 
 .animate-fade {
-    animation: revealFade 0.5s ease both;
+    animation: revealFade 0.4s ease forwards;
 }
 
 .animate-scale {
-    animation: revealScale 0.55s var(--ease-out-expo) both;
+    animation: revealScale 0.45s var(--ease-out-expo) forwards;
 }
 
 /* Stagger Delays for Grids and Rows */
-.stagger-1 { animation-delay: 0.05s; }
-.stagger-2 { animation-delay: 0.12s; }
-.stagger-3 { animation-delay: 0.18s; }
-.stagger-4 { animation-delay: 0.25s; }
-.stagger-5 { animation-delay: 0.32s; }
+.stagger-1 { animation-delay: 0.04s; }
+.stagger-2 { animation-delay: 0.08s; }
+.stagger-3 { animation-delay: 0.12s; }
+.stagger-4 { animation-delay: 0.16s; }
+.stagger-5 { animation-delay: 0.20s; }
 
-/* 4. Fluid Card Elevation & Hover Physics */
+/* 4. Fluid Card Elevation & Hover Physics (No permanent will-change VRAM bloat) */
 .card-custom, .stat-card {
-    transition: transform 0.4s var(--ease-out-expo), 
-                box-shadow 0.4s var(--ease-out-expo), 
-                border-color 0.3s var(--ease-out-expo) !important;
-    will-change: transform, box-shadow;
+    transition: transform 0.28s var(--ease-out-expo), 
+                box-shadow 0.28s var(--ease-out-expo), 
+                border-color 0.25s var(--ease-out-expo);
+    backface-visibility: hidden;
 }
 
 .card-custom:hover, .stat-card:hover {
-    transform: translateY(-5px) !important;
-    box-shadow: 0 16px 36px -12px rgba(244, 114, 182, 0.2) !important;
+    transform: translate3d(0, -5px, 0);
+    box-shadow: 0 18px 36px -12px rgba(219, 39, 119, 0.18), 0 4px 12px -2px rgba(0, 0, 0, 0.04) !important;
     border-color: #f472b6 !important;
 }
 
-/* 5. Tactile Button Press Physics (Apple / Linear style) */
+/* Disable expensive hover transforms while actively scrolling for 120fps smoothness */
+body.is-scrolling .card-custom,
+body.is-scrolling .stat-card,
+body.is-scrolling .bento-card,
+body.is-scrolling .cat-tile,
+body.is-scrolling .gallery-bento-card {
+    transition: none !important;
+}
+
+/* 5. Tactile Button Press Physics */
 .btn {
     transition: transform 0.18s var(--ease-out-expo), 
                 box-shadow 0.2s var(--ease-out-expo), 
@@ -124,23 +144,39 @@ html {
 }
 
 .btn-primary:hover {
-    box-shadow: 0 8px 20px -4px rgba(219, 39, 119, 0.35) !important;
+    box-shadow: 0 8px 20px -4px rgba(219, 39, 119, 0.38) !important;
 }
 
-/* 6. Interactive Pill & Chip Micro-Interactions (Apple / Linear Design) */
+.btn-ripple-wave {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    transform: scale(0);
+    animation: btnRippleAnim 0.5s ease-out forwards;
+    pointer-events: none;
+}
+
+@keyframes btnRippleAnim {
+    to {
+        transform: scale(2.6);
+        opacity: 0;
+    }
+}
+
+/* 6. Interactive Pill & Chip Micro-Interactions */
 .brand-pill, .model-chip, .issue-badge {
     transition: background-color 0.18s var(--ease-out-expo),
                 border-color 0.18s var(--ease-out-expo),
                 color 0.18s var(--ease-out-expo),
                 box-shadow 0.18s var(--ease-out-expo),
-                transform 0.12s ease !important;
+                transform 0.15s ease !important;
     position: relative;
     user-select: none;
 }
 
 .brand-pill:hover, .issue-badge:hover {
     transform: translateY(-1px) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    box-shadow: 0 3px 10px rgba(219, 39, 119, 0.1);
 }
 
 .brand-pill:active, .issue-badge:active {
@@ -149,10 +185,10 @@ html {
 
 .brand-pill.active, .issue-badge.selected {
     transform: translateY(0) !important;
-    background-color: #f472b6 !important;
+    background-color: #db2777 !important;
     color: #ffffff !important;
-    border-color: #f472b6 !important;
-    box-shadow: 0 4px 14px rgba(244, 114, 182, 0.4) !important;
+    border-color: #db2777 !important;
+    box-shadow: 0 4px 14px rgba(219, 39, 119, 0.35) !important;
 }
 
 .issue-badge i {
@@ -178,8 +214,8 @@ html {
 /* 8. Pulsing Status Indicator Dots */
 .pulse-indicator {
     display: inline-block;
-    width: 9px;
-    height: 9px;
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
     margin-right: 6px;
     position: relative;
@@ -198,20 +234,20 @@ html {
 
 @keyframes pulseDotGreen {
     0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6); }
-    70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); }
+    70% { box-shadow: 0 0 0 6px rgba(16, 185, 129, 0); }
     100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
 }
 
 @keyframes pulseDotOrange {
     0% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.6); }
-    70% { box-shadow: 0 0 0 7px rgba(245, 158, 11, 0); }
+    70% { box-shadow: 0 0 0 6px rgba(245, 158, 11, 0); }
     100% { box-shadow: 0 0 0 0 rgba(245, 158, 11, 0); }
 }
 
 /* 9. Floating Hero Device & Badge Physics */
 @keyframes floatSubtle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-7px); }
+    0%, 100% { transform: translate3d(0, 0, 0); }
+    50% { transform: translate3d(0, -6px, 0); }
 }
 .animate-float {
     animation: floatSubtle 4s ease-in-out infinite;
@@ -219,44 +255,32 @@ html {
 
 /* 10. Form Control Focus Glow */
 .form-control, .form-select {
-    transition: border-color 0.25s var(--ease-out-expo), 
-                box-shadow 0.25s var(--ease-out-expo), 
-                transform 0.2s var(--ease-out-expo) !important;
+    transition: border-color 0.2s var(--ease-out-expo), 
+                box-shadow 0.2s var(--ease-out-expo) !important;
 }
 .form-control:focus, .form-select:focus {
-    border-color: #09090b !important;
-    box-shadow: 0 0 0 3.5px rgba(9, 9, 11, 0.08) !important;
-    transform: translateY(-1px);
+    border-color: #db2777 !important;
+    box-shadow: 0 0 0 3.5px rgba(219, 39, 119, 0.14) !important;
 }
 
 /* 11. Modal Window Spring Scale-In */
 .modal.fade .modal-dialog {
-    transform: scale(0.92) translateY(20px);
-    transition: transform 0.4s var(--ease-out-expo), opacity 0.3s ease;
+    transform: scale(0.95) translate3d(0, 14px, 0);
+    transition: transform 0.28s var(--ease-out-expo), opacity 0.22s ease;
     opacity: 0;
 }
 .modal.show .modal-dialog {
-    transform: scale(1) translateY(0);
+    transform: scale(1) translate3d(0, 0, 0);
     opacity: 1;
 }
 
-/* 12. Award-Winning Ambient Lighting & Bento Grid Systems */
+/* 12. Ambient Lighting & Bento Grid Systems */
 .hero-mesh-dark {
     background: radial-gradient(circle at 15% 25%, rgba(255, 255, 255, 0.09) 0%, transparent 45%),
                 radial-gradient(circle at 85% 75%, rgba(255, 255, 255, 0.06) 0%, transparent 45%),
                 linear-gradient(135deg, #09090b 0%, #18181b 100%) !important;
     position: relative;
     overflow: hidden;
-}
-
-.hero-mesh-dark::before {
-    content: '';
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
-    background-image: radial-gradient(rgba(255, 255, 255, 0.1) 1px, transparent 1px);
-    background-size: 28px 28px;
-    opacity: 0.35;
-    pointer-events: none;
 }
 
 .bento-grid {
@@ -268,16 +292,16 @@ html {
 .bento-card {
     background: #ffffff;
     border: 1px solid #fce7f3;
-    border-radius: 20px;
+    border-radius: 22px;
     padding: 2rem;
     position: relative;
     overflow: hidden;
-    transition: transform 0.35s var(--ease-out-expo), box-shadow 0.35s var(--ease-out-expo), border-color 0.3s ease;
+    transition: transform 0.28s var(--ease-out-expo), box-shadow 0.28s var(--ease-out-expo), border-color 0.25s ease;
 }
 
 .bento-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 20px 40px -15px rgba(244, 114, 182, 0.2);
+    transform: translate3d(0, -4px, 0);
+    box-shadow: 0 20px 40px -15px rgba(219, 39, 119, 0.2);
     border-color: #f472b6;
 }
 
@@ -292,31 +316,106 @@ html {
     box-shadow: 0 20px 40px -15px rgba(74, 21, 52, 0.5);
 }
 
-.interactive-pill-group .pill-btn {
-    border: 1px solid #e4e4e7;
-    background: #ffffff;
-    color: #09090b;
-    border-radius: 9999px;
-    padding: 0.5rem 1.25rem;
-    font-size: 0.82rem;
-    font-weight: 600;
+/* 13. Floating Quick-Action Dock (Back to Top + Live Pick-Up Cart Bar) */
+.floating-quick-dock {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    z-index: 9990;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    pointer-events: none;
+}
+
+.floating-dock-btn {
+    pointer-events: auto;
+    border: none;
+    outline: none;
     cursor: pointer;
-    transition: all 0.2s var(--ease-out-expo);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.28s var(--ease-out-expo), opacity 0.28s var(--ease-out-expo), box-shadow 0.28s var(--ease-out-expo);
 }
 
-.interactive-pill-group .pill-btn:hover {
-    border-color: #09090b;
-    background: #f4f4f5;
-}
-
-.interactive-pill-group .pill-btn.active {
-    background: #09090b;
+#backToTopBtn {
+    width: 46px;
+    height: 46px;
+    border-radius: 50%;
+    background: #2b1120;
     color: #ffffff;
-    border-color: #09090b;
-    box-shadow: 0 4px 12px rgba(9, 9, 11, 0.2);
+    border: 1px solid rgba(244, 114, 182, 0.4);
+    box-shadow: 0 10px 25px -5px rgba(43, 17, 32, 0.45);
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.9);
+    pointer-events: none;
 }
 
-/* 13. Respect User Motion Preferences */
+#backToTopBtn.visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    pointer-events: auto;
+}
+
+#backToTopBtn:hover {
+    background: #db2777;
+    transform: translate3d(0, -3px, 0) scale(1.05);
+    box-shadow: 0 14px 28px -5px rgba(219, 39, 119, 0.5);
+}
+
+#floatingCartPill {
+    background: linear-gradient(135deg, #db2777 0%, #be185d 100%);
+    color: #ffffff;
+    text-decoration: none;
+    padding: 10px 18px;
+    border-radius: 9999px;
+    font-size: 0.84rem;
+    font-weight: 700;
+    box-shadow: 0 12px 28px -6px rgba(219, 39, 119, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    gap: 10px;
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.92);
+    pointer-events: none;
+}
+
+#floatingCartPill.visible {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+    pointer-events: auto;
+}
+
+#floatingCartPill:hover {
+    transform: translate3d(0, -3px, 0) scale(1.03);
+    box-shadow: 0 16px 32px -6px rgba(219, 39, 119, 0.7);
+    color: #ffffff;
+}
+
+/* 14. Outsourced Hover Product Video Commercial Overlay */
+.product-hover-video {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 3;
+    background: #09090b;
+    transition: opacity 0.35s var(--ease-out-expo);
+}
+
+.card-ad-playing .product-hover-video {
+    opacity: 1;
+}
+
+.card-ad-playing .product-thumb {
+    opacity: 0;
+    transform: scale(0.94);
+}
+
+/* 15. Respect User Motion Preferences */
 @media (prefers-reduced-motion: reduce) {
     *, ::before, ::after {
         animation-duration: 0.01ms !important;

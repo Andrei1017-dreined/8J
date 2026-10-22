@@ -7,7 +7,7 @@ $message = '';
 $prefill_appraisal_id = (int)($_GET['appraisal_id'] ?? 0);
 
 // Fetch pending appraisals
-$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_buyout') ORDER BY id DESC LIMIT 20")->fetchAll();
+$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_buyout') ORDER BY id DESC")->fetchAll();
 
 // Handle Buyout Execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'execute_buyout') {
@@ -122,16 +122,20 @@ require_once __DIR__ . '/../includes/header.php';
                             <!-- Select Appraisal -->
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">1. Select Appraised Unit</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="search" id="appraisalSearch" class="form-control" placeholder="Search by IMEI, customer name, or model..." autocomplete="off">
+                                </div>
                                 <select name="appraisal_id" id="appraisalSelect" class="form-select" required onchange="updateBuyoutInfo()">
                                     <option value="" disabled <?= $prefill_appraisal_id == 0 ? 'selected' : '' ?>>-- Choose Appraisal Record --</option>
                                     <?php foreach ($eligible_appraisals as $app): ?>
-                                        <option value="<?= $app['id'] ?>" 
+                                        <option value="<?= $app['id'] ?>" data-search="<?= htmlspecialchars(strtolower($app['imei'] . ' ' . $app['customer_name'] . ' ' . $app['contact_number'] . ' ' . $app['brand'] . ' ' . $app['model_name'] . ' #' . $app['id'])) ?>" 
                                             data-val="<?= $app['final_appraised_value'] ?>"
                                             data-name="<?= htmlspecialchars($app['customer_name']) ?>"
                                             data-contact="<?= htmlspecialchars($app['contact_number']) ?>"
                                             data-device="<?= htmlspecialchars($app['brand'] . ' ' . $app['model_name'] . ' ' . $app['storage_capacity']) ?>"
                                             <?= $prefill_appraisal_id == $app['id'] ? 'selected' : '' ?>>
-                                            #<?= $app['id'] ?> - <?= htmlspecialchars($app['customer_name']) ?> | <?= htmlspecialchars($app['brand'] . ' ' . $app['model_name']) ?> (Offer: <?= format_currency($app['final_appraised_value']) ?>)
+                                            #<?= $app['id'] ?> - <?= htmlspecialchars($app['customer_name']) ?> | <?= htmlspecialchars($app['brand'] . ' ' . $app['model_name']) ?><?= !empty($app['imei']) ? ' | IMEI ' . htmlspecialchars($app['imei']) : '' ?> (Offer: <?= format_currency($app['final_appraised_value']) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -277,6 +281,34 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<script>
+// Live search over appraisals (IMEI / customer / contact / model / #id)
+(function () {
+    const search = document.getElementById('appraisalSearch');
+    const select = document.getElementById('appraisalSelect');
+    if (!search || !select) return;
+    search.addEventListener('input', function () {
+        const terms = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        let visible = [];
+        Array.from(select.options).forEach(function (opt) {
+            if (!opt.value) return;
+            const hay = opt.dataset.search || '';
+            const match = terms.every(function (t) { return hay.indexOf(t) !== -1; });
+            opt.hidden = !match;
+            opt.disabled = !match;
+            if (match) visible.push(opt);
+        });
+        if (terms.length && visible.length === 1) {
+            select.value = visible[0].value;
+            select.dispatchEvent(new Event('change'));
+        } else if (select.selectedOptions[0] && select.selectedOptions[0].hidden) {
+            select.selectedIndex = 0;
+            select.dispatchEvent(new Event('change'));
+        }
+        search.classList.toggle('is-invalid', terms.length > 0 && visible.length === 0);
+    });
+})();
+</script>
 <script>
 function updateBuyoutInfo() {
     const select = document.getElementById('appraisalSelect');

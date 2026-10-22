@@ -66,13 +66,14 @@ if ($type === 'unit') {
     $related_items = $r_stmt->fetchAll();
 }
 
-// Image resolver
+// Image resolver & Outsourced Commercial Video
 $main_image = BASE_URL . 'assets/img/icons/shop.png';
 if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/' . $specs['gallery'][0])) {
     $main_image = BASE_URL . 'assets/img/products/' . $specs['gallery'][0];
 } elseif (!empty($item['image']) && file_exists(__DIR__ . '/assets/img/products/' . $item['image'])) {
     $main_image = BASE_URL . 'assets/img/products/' . $item['image'];
 }
+$detail_ad_vid = get_product_ad_video($item_name, $item['brand'] ?? '');
 ?>
 
 <div class="container py-4">
@@ -109,19 +110,99 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
                         <?php endif; ?>
                     </div>
 
-                    <!-- Main Large Image Container -->
-                    <div class="product-gallery-main p-3 rounded-4 d-flex align-items-center justify-content-center border"
-                         style="height: 420px; background: #ffffff;">
+                    <!-- Main Large Image, Interactive 360° 3D Studio & Outsourced Commercial Video Container -->
+                    <div class="product-gallery-main p-3 rounded-4 d-flex align-items-center justify-content-center border position-relative overflow-hidden"
+                         style="height: 430px; background: #ffffff;">
                         <!-- Active Image with Smooth Zoom Preview -->
                         <img id="mainProductView" src="<?= $main_image ?>" 
                              alt="<?= htmlspecialchars($item_name) ?>" 
                              class="img-fluid rounded-3" 
                              style="max-height: 380px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.08)); transition: transform 0.3s ease, opacity 0.2s ease;">
+
+                        <!-- Interactive 360° 3D All-Angles WebGL Studio -->
+                        <div id="mainProduct3DWrapper"
+                             class="d-none studio-3d-viewport rounded-4"
+                             style="position: absolute; inset: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 42%, #ffffff 0%, #fff0f6 65%, #fce7f3 100%); z-index: 4;">
+                            <!-- Top-Left Interactive Hint Pill -->
+                            <div class="position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill bg-white border shadow-xs d-flex align-items-center gap-2"
+                                 style="z-index: 6; font-size: 0.72rem; font-weight: 700; color: #2b1120; pointer-events: none;">
+                                <i class="fa-solid fa-arrows-up-down-left-right text-danger"></i>
+                                <span>Drag 360° All Angles • Scroll to Zoom</span>
+                            </div>
+                            <!-- Top-Right Spin & Wireframe Controls -->
+                            <div class="position-absolute top-0 end-0 m-3 d-flex gap-1" style="z-index: 6;">
+                                <button type="button" id="btn3DAutoSpin" onclick="toggleDetail3DSpin()"
+                                        class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold shadow-xs"
+                                        style="font-size: 0.7rem;">
+                                    <i class="fa-solid fa-Sync fa-spin text-danger me-1"></i>Auto-Spin
+                                </button>
+                                <button type="button" id="btn3DWireframe" onclick="toggleDetail3DWireframe()"
+                                        class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold shadow-xs"
+                                        style="font-size: 0.7rem;">
+                                    <i class="fa-solid fa-cube me-1"></i>Wireframe
+                                </button>
+                            </div>
+                            <!-- WebGL Canvas Target -->
+                            <div id="mainProduct3DCanvas" style="width: 100%; height: 100%;"></div>
+                        </div>
+
+                        <!-- Outsourced HD Commercial Video Player -->
+                        <video id="mainProductAdVideo"
+                               muted loop playsinline preload="none"
+                               data-ad-src="<?= htmlspecialchars($detail_ad_vid['hd']) ?>"
+                               class="d-none rounded-4"
+                               style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #09090b; z-index: 3;"></video>
+
+                        <!-- Interactive 360° 3D View Toggle Pill (Bottom Left) -->
+                        <button type="button"
+                                id="toggleDetail3DBtn"
+                                onclick="toggleDetail3DView()"
+                                class="btn btn-dark btn-sm rounded-pill position-absolute bottom-0 start-0 m-3 px-3 py-1.5 fw-bold shadow"
+                                style="z-index: 5; font-size: 0.78rem; border: 1px solid rgba(244, 114, 182, 0.5);">
+                            <i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View
+                        </button>
+
+                        <!-- Watch Official Commercial Ad Pill (Bottom Right) -->
+                        <button type="button"
+                                id="toggleDetailAdBtn"
+                                onclick="toggleDetailCommercialAd()"
+                                class="btn btn-dark btn-sm rounded-pill position-absolute bottom-0 end-0 m-3 px-3 py-1.5 fw-bold shadow"
+                                style="z-index: 5; font-size: 0.78rem; border: 1px solid rgba(244, 114, 182, 0.5);">
+                            <i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad
+                        </button>
+                    </div>
+
+                    <!-- 360° 3D Quick Camera Angles Bar (Click any angle to inspect in 3D) -->
+                    <div class="d-flex align-items-center flex-wrap gap-1.5 mt-2 p-2 rounded-3 border bg-light" style="border-color: #fce7f3 !important;">
+                        <span class="badge bg-dark text-white rounded-pill px-2.5 py-1 me-1" style="font-size: 0.68rem;">
+                            <i class="fa-solid fa-compass-drafting text-warning me-1"></i> 3D Angles:
+                        </span>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0.14, -0.52, 5.1, this)">
+                            <i class="fa-solid fa-cube text-danger me-1"></i>3D Iso
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, 0, 4.8, this)">
+                            Front
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, Math.PI, 4.8, this)">
+                            Back / Cameras
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, Math.PI / 2, 4.6, this)">
+                            Left Side
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, -Math.PI / 2, 4.6, this)">
+                            Right Side
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(-Math.PI / 2, 0, 4.4, this)">
+                            Bottom Port
+                        </button>
+                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(Math.PI / 2, 0, 4.4, this)">
+                            Top Edge
+                        </button>
                     </div>
 
                     <!-- Gallery Thumbnails Strip -->
-                    <?php if (!empty($specs['gallery']) && count($specs['gallery']) > 1): ?>
-                        <div class="d-flex align-items-center gap-2 mt-3 overflow-auto py-2">
+                    <div class="d-flex align-items-center gap-2 mt-2 overflow-auto py-2">
+                        <?php if (!empty($specs['gallery'])): ?>
                             <?php foreach ($specs['gallery'] as $idx => $gImg): 
                                 $gPath = BASE_URL . 'assets/img/products/' . $gImg;
                                 if (!file_exists(__DIR__ . '/assets/img/products/' . $gImg)) continue;
@@ -133,8 +214,23 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
                                     <img src="<?= $gPath ?>" alt="Thumbnail" class="w-100 h-100 object-fit-contain rounded-2">
                                 </button>
                             <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                        <?php endif; ?>
+                        <button type="button"
+                                id="thumb3DTriggerBtn"
+                                class="gallery-thumb-btn btn p-1 rounded-3 border border-light-subtle d-flex flex-column align-items-center justify-content-center text-white"
+                                style="width: 88px; height: 72px; background: linear-gradient(135deg, #0f172a 0%, #db2777 100%); font-size: 0.68rem; font-weight: 700;"
+                                onclick="toggleDetail3DView(true)">
+                            <i class="fa-solid fa-cube text-info fs-5 mb-1"></i>
+                            <span>360° 3D</span>
+                        </button>
+                        <button type="button"
+                                class="gallery-thumb-btn btn p-1 rounded-3 border border-light-subtle d-flex flex-column align-items-center justify-content-center text-white"
+                                style="width: 88px; height: 72px; background: linear-gradient(135deg, #18181b 0%, #4a1534 100%); font-size: 0.68rem; font-weight: 700;"
+                                onclick="toggleDetailCommercialAd(true)">
+                            <i class="fa-solid fa-film text-warning fs-5 mb-1"></i>
+                            <span>Play Ad</span>
+                        </button>
+                    </div>
 
                     <!-- Store Pick-up Notice Footnote -->
                     <div class="mt-4 p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
@@ -553,23 +649,190 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
 </div>
 
 <script>
-// Switch main gallery image on thumbnail click
+let detail3DStudio = null;
+let currentDetailImageSrc = <?= json_encode($main_image) ?>;
+const detailProductConfig = {
+    name: <?= json_encode($item_name) ?>,
+    brand: <?= json_encode($item['brand'] ?? 'Apple') ?>,
+    category: <?= json_encode($category_name) ?>,
+    color: <?= json_encode($item['color'] ?? '') ?>,
+    type: <?= json_encode($type) ?>,
+    image: currentDetailImageSrc
+};
+
+function ensureDetail3DInitialized() {
+    const canvasContainer = document.getElementById('mainProduct3DCanvas');
+    if (!canvasContainer || typeof window.Product3DStudio !== 'function') return null;
+    if (!detail3DStudio) {
+        detail3DStudio = new window.Product3DStudio(canvasContainer, detailProductConfig);
+    }
+    return detail3DStudio;
+}
+
+// Toggle Interactive 360° 3D All-Angles View
+function toggleDetail3DView(forceOpen = false) {
+    const wrapper3D = document.getElementById('mainProduct3DWrapper');
+    const vidEl = document.getElementById('mainProductAdVideo');
+    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
+    const toggleAdBtn = document.getElementById('toggleDetailAdBtn');
+    const thumb3DBtn = document.getElementById('thumb3DTriggerBtn');
+    if (!wrapper3D || !toggle3DBtn) return;
+
+    const shouldOpen = forceOpen || wrapper3D.classList.contains('d-none');
+
+    // Stop video ad if playing
+    if (vidEl && !vidEl.classList.contains('d-none')) {
+        try { vidEl.pause(); } catch (e) {}
+        vidEl.classList.add('d-none');
+    }
+    if (toggleAdBtn) {
+        toggleAdBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
+    }
+
+    if (shouldOpen) {
+        wrapper3D.classList.remove('d-none');
+        const studio = ensureDetail3DInitialized();
+        if (studio && studio.resizeHandler) {
+            setTimeout(() => studio.resizeHandler(), 30);
+        }
+        toggle3DBtn.innerHTML = '<i class="fa-solid fa-image text-warning me-1"></i> Back to Studio Photo';
+        if (thumb3DBtn) {
+            thumb3DBtn.classList.remove('border-light-subtle');
+            thumb3DBtn.classList.add('border-dark', 'shadow-sm');
+        }
+    } else {
+        wrapper3D.classList.add('d-none');
+        toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
+        if (thumb3DBtn) {
+            thumb3DBtn.classList.remove('border-dark', 'shadow-sm');
+            thumb3DBtn.classList.add('border-light-subtle');
+        }
+    }
+}
+
+// Jump to specific 3D camera angle (Front, Back, Left, Right, Bottom Port, Top, Isometric)
+function inspectProduct3DAngle(rotX, rotY, zoom, btnEl) {
+    toggleDetail3DView(true);
+    const studio = ensureDetail3DInitialized();
+    if (studio) {
+        studio.setAngle(rotX, rotY, zoom);
+        const spinBtn = document.getElementById('btn3DAutoSpin');
+        if (spinBtn) {
+            spinBtn.innerHTML = '<i class="fa-solid fa-rotate text-secondary me-1"></i>Auto-Spin: OFF';
+        }
+    }
+    document.querySelectorAll('.detail-angle-btn').forEach(b => {
+        b.classList.remove('btn-dark', 'text-white');
+        b.classList.add('btn-white', 'bg-white');
+    });
+    if (btnEl) {
+        btnEl.classList.remove('btn-white', 'bg-white');
+        btnEl.classList.add('btn-dark', 'text-white');
+    }
+}
+
+function toggleDetail3DSpin() {
+    const studio = ensureDetail3DInitialized();
+    const spinBtn = document.getElementById('btn3DAutoSpin');
+    if (!studio || !spinBtn) return;
+    const spinning = studio.toggleAutoRotate();
+    spinBtn.innerHTML = spinning
+        ? '<i class="fa-solid fa-sync fa-spin text-danger me-1"></i>Auto-Spin: ON'
+        : '<i class="fa-solid fa-rotate text-secondary me-1"></i>Auto-Spin: OFF';
+}
+
+function toggleDetail3DWireframe() {
+    const studio = ensureDetail3DInitialized();
+    const wfBtn = document.getElementById('btn3DWireframe');
+    if (!studio || !wfBtn) return;
+    const isWf = studio.setWireframe();
+    wfBtn.classList.toggle('btn-dark', isWf);
+    wfBtn.classList.toggle('text-white', isWf);
+    wfBtn.classList.toggle('btn-light', !isWf);
+}
+
+// Switch main gallery image on thumbnail click (and sync 3D finish color!)
 function switchGalleryImage(imgSrc, btnEl) {
+    currentDetailImageSrc = imgSrc;
+    detailProductConfig.image = imgSrc;
+
+    // Also update 3D model finish color to match clicked thumbnail
+    if (detail3DStudio) {
+        detail3DStudio.rebuildModel({ image: imgSrc, color: imgSrc });
+    }
+
     const mainView = document.getElementById('mainProductView');
-    if (!mainView) return;
-    
-    mainView.style.opacity = '0.3';
-    setTimeout(() => {
-        mainView.src = imgSrc;
-        mainView.style.opacity = '1';
-    }, 150);
+    const vidEl = document.getElementById('mainProductAdVideo');
+    const wrapper3D = document.getElementById('mainProduct3DWrapper');
+    const toggleAdBtn = document.getElementById('toggleDetailAdBtn');
+    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
+
+    if (vidEl && !vidEl.classList.contains('d-none')) {
+        try { vidEl.pause(); } catch (e) {}
+        vidEl.classList.add('d-none');
+    }
+    if (toggleAdBtn) {
+        toggleAdBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
+    }
+
+    // If user is currently in 3D mode, keep 3D mode open so they see the new color in 3D immediately!
+    // If they click the same thumbnail again, return to Studio Photo.
+    if (wrapper3D && !wrapper3D.classList.contains('d-none')) {
+        if (btnEl && btnEl.dataset.lastClickedIn3D === '1') {
+            btnEl.dataset.lastClickedIn3D = '0';
+            wrapper3D.classList.add('d-none');
+            if (toggle3DBtn) toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
+        } else {
+            document.querySelectorAll('.gallery-thumb-btn').forEach(b => b.dataset.lastClickedIn3D = '0');
+            if (btnEl) btnEl.dataset.lastClickedIn3D = '1';
+        }
+    }
+
+    if (mainView) {
+        mainView.style.opacity = '0.3';
+        setTimeout(() => {
+            mainView.src = imgSrc;
+            mainView.style.opacity = '1';
+        }, 150);
+    }
 
     document.querySelectorAll('.gallery-thumb-btn').forEach(btn => {
         btn.classList.remove('border-dark', 'shadow-sm');
         btn.classList.add('border-light-subtle');
     });
-    btnEl.classList.remove('border-light-subtle');
-    btnEl.classList.add('border-dark', 'shadow-sm');
+    if (btnEl) {
+        btnEl.classList.remove('border-light-subtle');
+        btnEl.classList.add('border-dark', 'shadow-sm');
+    }
+}
+
+// Toggle outsourced HD commercial ad video on Product Detail page
+function toggleDetailCommercialAd(forcePlay = false) {
+    const vidEl = document.getElementById('mainProductAdVideo');
+    const wrapper3D = document.getElementById('mainProduct3DWrapper');
+    const toggleBtn = document.getElementById('toggleDetailAdBtn');
+    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
+    if (!vidEl || !toggleBtn) return;
+
+    const shouldPlay = forcePlay || vidEl.classList.contains('d-none');
+    if (shouldPlay) {
+        if (wrapper3D && !wrapper3D.classList.contains('d-none')) {
+            wrapper3D.classList.add('d-none');
+            if (toggle3DBtn) toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
+        }
+        const src = vidEl.dataset.adSrc;
+        if (!vidEl.getAttribute('src') && src) {
+            vidEl.src = src;
+            vidEl.load();
+        }
+        vidEl.classList.remove('d-none');
+        vidEl.play().catch(() => {});
+        toggleBtn.innerHTML = '<i class="fa-solid fa-image text-info me-1"></i> Back to Studio Photo';
+    } else {
+        try { vidEl.pause(); } catch (e) {}
+        vidEl.classList.add('d-none');
+        toggleBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
+    }
 }
 
 // Adjust quantity

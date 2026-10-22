@@ -25,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     'role' => $user['role'],
                     'contact_number' => $user['contact_number']
                 ];
+                audit_log('User Login', 'Auth', "'{$user['username']}' signed in as {$user['role']}");
 
                 if (in_array($user['role'], ['admin', 'staff', 'technician'])) {
                     header("Location: " . BASE_URL . "admin/index.php");

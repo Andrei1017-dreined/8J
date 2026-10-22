@@ -10,7 +10,7 @@ $prefill_appraisal_id = (int)($_GET['appraisal_id'] ?? 0);
 $available_shop_units = $pdo->query("SELECT * FROM phone_units WHERE status = 'in_stock' ORDER BY brand, model_name")->fetchAll();
 
 // Fetch pending or eligible appraisals
-$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_trade') ORDER BY id DESC LIMIT 20")->fetchAll();
+$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_trade') ORDER BY id DESC")->fetchAll();
 
 // Handle Swap Execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'execute_trade') {
@@ -132,15 +132,19 @@ require_once __DIR__ . '/../includes/header.php';
                             <!-- Step 1: Select Trade-In Phone (Appraisal Record) -->
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">1. Select Customer's Appraised Phone (Trade-In Unit)</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="search" id="appraisalSearch" class="form-control" placeholder="Search by IMEI, customer name, or model..." autocomplete="off">
+                                </div>
                                 <select name="appraisal_id" id="appraisalSelect" class="form-select" required onchange="updateTradeCalculation()">
                                     <option value="" disabled <?= $prefill_appraisal_id == 0 ? 'selected' : '' ?>>-- Choose Customer Appraisal --</option>
                                     <?php foreach ($eligible_appraisals as $app): ?>
-                                        <option value="<?= $app['id'] ?>" 
+                                        <option value="<?= $app['id'] ?>" data-search="<?= htmlspecialchars(strtolower($app['imei'] . ' ' . $app['customer_name'] . ' ' . $app['contact_number'] . ' ' . $app['brand'] . ' ' . $app['model_name'] . ' #' . $app['id'])) ?>" 
                                             data-val="<?= $app['final_appraised_value'] ?>"
                                             data-customer="<?= htmlspecialchars($app['customer_name']) ?>"
                                             data-device="<?= htmlspecialchars($app['brand'] . ' ' . $app['model_name'] . ' ' . $app['storage_capacity']) ?>"
                                             <?= $prefill_appraisal_id == $app['id'] ? 'selected' : '' ?>>
-                                            #<?= $app['id'] ?> - <?= htmlspecialchars($app['customer_name']) ?> | <?= htmlspecialchars($app['brand'] . ' ' . $app['model_name']) ?> (Trade Val: <?= format_currency($app['final_appraised_value']) ?>)
+                                            #<?= $app['id'] ?> - <?= htmlspecialchars($app['customer_name']) ?> | <?= htmlspecialchars($app['brand'] . ' ' . $app['model_name']) ?><?= !empty($app['imei']) ? ' | IMEI ' . htmlspecialchars($app['imei']) : '' ?> (Trade Val: <?= format_currency($app['final_appraised_value']) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -152,14 +156,19 @@ require_once __DIR__ . '/../includes/header.php';
                             <!-- Step 2: Select Desired Shop Unit -->
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">2. Select Desired Shop Unit (Customer Wants to Receive)</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text bg-white"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="search" id="shopUnitSearch" class="form-control" placeholder="Search shop phone by IMEI, brand, model, color..." autocomplete="off">
+                                </div>
                                 <select name="outgoing_unit_id" id="shopUnitSelect" class="form-select" required onchange="updateTradeCalculation()">
                                     <option value="" disabled selected>-- Choose Shop Smartphone --</option>
                                     <?php foreach ($available_shop_units as $unit): ?>
                                         <option value="<?= $unit['id'] ?>" 
+                                            data-search="<?= htmlspecialchars(strtolower($unit['imei_1'] . ' ' . $unit['brand'] . ' ' . $unit['model_name'] . ' ' . $unit['storage_capacity'] . ' ' . $unit['color'])) ?>"
                                             data-price="<?= $unit['selling_price'] ?>"
                                             data-device="<?= htmlspecialchars($unit['brand'] . ' ' . $unit['model_name'] . ' ' . $unit['storage_capacity']) ?>"
                                             data-imei="<?= $unit['imei_1'] ?>">
-                                            <?= htmlspecialchars($unit['brand'] . ' ' . $unit['model_name'] . ' ' . $unit['storage_capacity']) ?> [<?= $unit['unit_condition'] ?>] - Price: <?= format_currency($unit['selling_price']) ?> (IMEI: <?= substr($unit['imei_1'], 0, 8) ?>...)
+                                            <?= htmlspecialchars($unit['brand'] . ' ' . $unit['model_name'] . ' ' . $unit['storage_capacity']) ?> [<?= $unit['unit_condition'] ?>] - Price: <?= format_currency($unit['selling_price']) ?> (IMEI: <?= htmlspecialchars($unit['imei_1']) ?>)
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
@@ -277,6 +286,60 @@ require_once __DIR__ . '/../includes/header.php';
     </div>
 </div>
 
+<script>
+// Live search over appraisals (IMEI / customer / contact / model / #id)
+(function () {
+    const search = document.getElementById('appraisalSearch');
+    const select = document.getElementById('appraisalSelect');
+    if (!search || !select) return;
+    search.addEventListener('input', function () {
+        const terms = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        let visible = [];
+        Array.from(select.options).forEach(function (opt) {
+            if (!opt.value) return;
+            const hay = opt.dataset.search || '';
+            const match = terms.every(function (t) { return hay.indexOf(t) !== -1; });
+            opt.hidden = !match;
+            opt.disabled = !match;
+            if (match) visible.push(opt);
+        });
+        if (terms.length && visible.length === 1) {
+            select.value = visible[0].value;
+            select.dispatchEvent(new Event('change'));
+        } else if (select.selectedOptions[0] && select.selectedOptions[0].hidden) {
+            select.selectedIndex = 0;
+            select.dispatchEvent(new Event('change'));
+        }
+        search.classList.toggle('is-invalid', terms.length > 0 && visible.length === 0);
+    });
+})();
+// Live search over shop units (IMEI / brand / model / storage / color)
+(function () {
+    const search = document.getElementById('shopUnitSearch');
+    const select = document.getElementById('shopUnitSelect');
+    if (!search || !select) return;
+    search.addEventListener('input', function () {
+        const terms = search.value.toLowerCase().trim().split(/\s+/).filter(Boolean);
+        let visible = [];
+        Array.from(select.options).forEach(function (opt) {
+            if (!opt.value) return;
+            const hay = opt.dataset.search || '';
+            const match = terms.every(function (t) { return hay.indexOf(t) !== -1; });
+            opt.hidden = !match;
+            opt.disabled = !match;
+            if (match) visible.push(opt);
+        });
+        if (terms.length && visible.length === 1) {
+            select.value = visible[0].value;
+            select.dispatchEvent(new Event('change'));
+        } else if (select.selectedOptions[0] && select.selectedOptions[0].hidden) {
+            select.selectedIndex = 0;
+            select.dispatchEvent(new Event('change'));
+        }
+        search.classList.toggle('is-invalid', terms.length > 0 && visible.length === 0);
+    });
+})();
+</script>
 <script>
 function updateTradeCalculation() {
     const appSelect = document.getElementById('appraisalSelect');

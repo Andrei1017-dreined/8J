@@ -29,6 +29,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             --card-border: #fce7f3;         /* Subtle soft pink border */
             --text-main: #2b1120;           /* High contrast dark rose-charcoal */
         }
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: optimizeLegibility;
+        }
         body {
             font-family: 'Plus Jakarta Sans', sans-serif;
             background-color: var(--surface-bg);
@@ -36,6 +41,22 @@ $current_page = basename($_SERVER['PHP_SELF']);
             min-height: 100vh;
             display: flex;
             flex-direction: column;
+            position: relative;
+        }
+        .global-page-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: url('<?= BASE_URL ?>assets/img/hero_bg_tech.jpg?v=<?= filemtime(__DIR__ . '/../assets/img/hero_bg_tech.jpg') ?>');
+            background-repeat: no-repeat;
+            background-position: center top;
+            background-size: cover;
+            z-index: -9999;
+            pointer-events: none;
+            transform: translateZ(0);
+            backface-visibility: hidden;
         }
         .site-wrapper {
             flex: 1 0 auto;
@@ -182,7 +203,6 @@ $current_page = basename($_SERVER['PHP_SELF']);
             box-shadow: 0 1px 3px 0 rgba(244, 114, 182, 0.08);
             border-bottom: 1px solid #fce7f3 !important;
         }
-        }
         .sidebar {
             background-color: var(--sidebar-bg);
             min-height: calc(100vh - 65px);
@@ -264,8 +284,11 @@ $current_page = basename($_SERVER['PHP_SELF']);
             border-bottom: 1px solid var(--card-border);
         }
     </style>
+    <script>window.BASE_URL_JS = '<?= BASE_URL ?>';</script>
 </head>
 <body>
+    <!-- Persistent GPU-Accelerated Fixed Wallpaper Layer -->
+    <div class="global-page-bg" aria-hidden="true"></div>
     <!-- Top Navbar -->
     <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
         <div class="container-fluid px-4">
@@ -273,7 +296,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 42px; height: 42px; object-fit: contain;" alt="8J Logo">
                 <div>
                     <span class="text-dark fw-bolder">8J</span> Cellphone & Accessories
-                    <small class="d-block text-muted" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.5px;">INTEGRATED MANAGEMENT SYSTEM</small>
+                    <small class="d-block text-muted" style="font-size: 0.68rem; font-weight: 600; letter-spacing: 0.5px;">VICTORY MALL TANAUAN • STALL #S1</small>
                 </div>
             </a>
             
@@ -282,28 +305,43 @@ $current_page = basename($_SERVER['PHP_SELF']);
             </button>
 
             <div class="collapse navbar-collapse" id="topNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3">
+                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-lg-1">
                     <li class="nav-item">
-                        <a class="nav-link <?= $current_page == 'catalog.php' ? 'active fw-bold' : '' ?>" href="<?= BASE_URL ?>catalog.php">
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'index.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>">
+                            <i class="fa-solid fa-house me-1 text-primary" style="font-size: 0.85rem;"></i> Home
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'catalog.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>catalog.php">
                             <img src="<?= BASE_URL ?>assets/img/icons/shop.png" class="ui-icon me-1" alt="Shop"> Catalog
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $current_page == 'book_repair.php' ? 'active fw-bold' : '' ?>" href="<?= BASE_URL ?>book_repair.php">
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'book_repair.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>book_repair.php">
                             <img src="<?= BASE_URL ?>assets/img/icons/support.png" class="ui-icon me-1" alt="Repair"> Book Repair
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="nav-link <?= $current_page == 'track_repair.php' ? 'active fw-bold' : '' ?>" href="<?= BASE_URL ?>track_repair.php">
-                            <img src="<?= BASE_URL ?>assets/img/icons/search.png" class="ui-icon me-1" alt="Track"> Track Repair
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'track_repair.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>track_repair.php">
+                            <img src="<?= BASE_URL ?>assets/img/icons/search.png" class="ui-icon me-1" alt="Track"> Track Order
                         </a>
                     </li>
                 </ul>
 
+                <!-- Global Quick Search Form -->
+                <form action="<?= BASE_URL ?>catalog.php" method="GET" class="d-none d-lg-flex align-items-center me-3" style="width: 245px;">
+                    <div class="input-group input-group-sm rounded-pill overflow-hidden border" style="background: #fff5f8; border-color: #fbcfe8 !important;">
+                        <span class="input-group-text border-0 bg-transparent ps-3 pe-1 text-muted">
+                            <i class="fa-solid fa-magnifying-glass" style="font-size: 0.78rem; color: #db2777;"></i>
+                        </span>
+                        <input type="text" name="q" id="globalNavSearch" class="form-control border-0 bg-transparent shadow-none small" placeholder="Search iPhone, AirPods... (/)" style="font-size: 0.8rem;" value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>">
+                    </div>
+                </form>
+
                 <ul class="navbar-nav ms-auto align-items-center gap-2">
-                    <li class="nav-item d-none d-xl-block">
-                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1.5" style="font-size: 0.76rem;">
-                            <i class="fa-solid fa-store me-1 text-secondary"></i> Tanauan Counter Open • 1-Hr Pick-Up
+                    <li class="nav-item d-none d-xxl-block">
+                        <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1" style="font-size: 0.74rem;">
+                            <span class="pulse-indicator green"></span> Counter Open • 1-Hr Pick-Up
                         </span>
                     </li>
                     <li class="nav-item">
@@ -312,7 +350,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         </a>
                     </li>
                     <li class="nav-item">
-                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3 position-relative d-inline-flex align-items-center gap-1" href="<?= BASE_URL ?>cart.php">
+                        <a class="btn btn-outline-primary btn-sm rounded-pill px-3 position-relative d-inline-flex align-items-center gap-1 fw-semibold" href="<?= BASE_URL ?>cart.php">
                             <img src="<?= BASE_URL ?>assets/img/icons/cart.png" class="ui-icon" alt="Cart"> Pick-Up Cart
                             <span id="cart-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
                         </a>

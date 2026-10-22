@@ -34,9 +34,19 @@ $current_admin_page = basename($_SERVER['PHP_SELF']);
                     <img src="<?= BASE_URL ?>assets/img/icons/shop.png" class="sidebar-icon" alt="Inventory"> Inventory (IMEI)
                 </a>
             </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $current_admin_page == 'categories.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/categories.php">
+                    <img src="<?= BASE_URL ?>assets/img/icons/settings.png" class="sidebar-icon" alt="Categories"> Categories
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link <?= $current_admin_page == 'customers.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/customers.php">
+                    <img src="<?= BASE_URL ?>assets/img/icons/favorites.png" class="sidebar-icon" alt="Customers"> Customers
+                </a>
+            </li>
         </ul>
 
-        <div class="nav-section-title">Phone Trading & Buying</div>
+        <div class="nav-section-title">Trade-In, Swap &amp; Buyouts</div>
         <ul class="nav flex-column mb-2">
             <li class="nav-item">
                 <a class="nav-link <?= $current_admin_page == 'appraisal.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/appraisal.php">
@@ -45,12 +55,12 @@ $current_admin_page = basename($_SERVER['PHP_SELF']);
             </li>
             <li class="nav-item">
                 <a class="nav-link <?= $current_admin_page == 'trading.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/trading.php">
-                    <img src="<?= BASE_URL ?>assets/img/icons/trade-in.png" class="sidebar-icon" alt="Trading"> Cellphone Trading
+                    <img src="<?= BASE_URL ?>assets/img/icons/trade-in.png" class="sidebar-icon" alt="Trading"> Phone Trade-In &amp; Swap
                 </a>
             </li>
             <li class="nav-item">
                 <a class="nav-link <?= $current_admin_page == 'buying.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/buying.php">
-                    <img src="<?= BASE_URL ?>assets/img/icons/deals.png" class="sidebar-icon" alt="Buyouts"> Buying of Units
+                    <img src="<?= BASE_URL ?>assets/img/icons/deals.png" class="sidebar-icon" alt="Buyouts"> Buying of Units (Cash)
                 </a>
             </li>
         </ul>
@@ -75,6 +85,11 @@ $current_admin_page = basename($_SERVER['PHP_SELF']);
                 <li class="nav-item">
                     <a class="nav-link <?= $current_admin_page == 'reports.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/reports.php">
                         <img src="<?= BASE_URL ?>assets/img/icons/orders.png" class="sidebar-icon" alt="Reports"> Sales Reports
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link <?= $current_admin_page == 'audit.php' ? 'active' : '' ?>" href="<?= BASE_URL ?>admin/audit.php">
+                        <img src="<?= BASE_URL ?>assets/img/icons/support.png" class="sidebar-icon" alt="Audit"> Audit Trail
                     </a>
                 </li>
                 <li class="nav-item">
