@@ -245,7 +245,7 @@ require_once __DIR__ . '/includes/header.php';
                                 <?php endif; ?>
 
                                 <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
-                                    <a href="<?= BASE_URL ?>track_repair.php?ticket=<?= urlencode($rep['job_order_no']) ?>" class="btn btn-outline-dark btn-sm rounded-pill px-3 btn-tactile">
+                                    <a href="<?= BASE_URL ?>track_repair.php?q=<?= urlencode($rep['job_order_no']) ?>" class="btn btn-outline-dark btn-sm rounded-pill px-3 btn-tactile">
                                         <i class="fa-solid fa-magnifying-glass me-1"></i> Live Tracking
                                     </a>
                                     <a href="<?= BASE_URL ?>print_job_order.php?id=<?= $rep['id'] ?>" target="_blank" class="btn btn-outline-secondary btn-sm rounded-pill px-3">

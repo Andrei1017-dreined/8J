@@ -305,8 +305,11 @@
             this.config = Object.assign({}, this.config, newConfig || {});
             const targetUid = resolveSketchfabModelUID(this.config);
 
-            // A real model file in assets/models/ wins; otherwise phones without a CAD model get the generated one
-            if (this.config.modelUrl || (!targetUid && isHandset(this.config))) {
+            // A real model file in assets/models/ wins; iPhones always use the built-in model (matched to the
+            // exact model + finish, works offline, has the teardown view). The Sketchfab stream is kept for
+            // accessories only - it can stall silently and leave a blank viewer.
+            if (this.config.modelUrl || isHandset(this.config)) {
+                this.loadToken = null;
                 this.currentUid = null;
                 this.api = null;
                 this.iframe = null;
@@ -373,6 +376,29 @@
             const loaderOverlay = this.container.querySelector('.sketchfab-loader-overlay');
             this.iframe = this.container.querySelector('iframe');
 
+            // Watchdog: the Sketchfab embed sometimes never reports ready or error - don't spin forever
+            const loadToken = {};
+            this.loadToken = loadToken;
+            let settled = false;
+            setTimeout(() => {
+                if (settled || this.loadToken !== loadToken || !this.container.contains(loaderOverlay)) return;
+                this.currentUid = null;
+                this.iframe = null;
+                this.container.innerHTML = `
+                    <div class="d-flex flex-column align-items-center justify-content-center text-center p-4 w-100 h-100"
+                         style="background: radial-gradient(circle at 50% 35%, #ffffff 0%, #fdf2f8 70%, #fce7f3 100%);">
+                        <i class="fa-solid fa-cube fs-1 mb-2" style="color:#f9a8d4;"></i>
+                        <h6 class="fw-bold mb-1">3D model is taking too long</h6>
+                        <p class="text-muted small mb-3" style="max-width:320px;">The 3D stream didn't respond. You can retry, or look through the photos instead.</p>
+                        <div class="d-flex gap-2">
+                            <button type="button" class="btn btn-sm rounded-pill px-3 fw-bold text-white" style="background:#db2777;" data-p3d-retry>Retry</button>
+                            <button type="button" onclick="if(typeof pdShowPhoto==='function'){pdShowPhoto(0);}else if(typeof toggleDetail3DView==='function'){toggleDetail3DView(false);}" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold">View photos</button>
+                        </div>
+                    </div>`;
+                const retry = this.container.querySelector('[data-p3d-retry]');
+                if (retry) retry.addEventListener('click', () => this.initModel());
+            }, 20000);
+
             try {
                 const Sketchfab = await ensureSketchfabAPI();
                 const client = new Sketchfab('1.12.1', this.iframe);
@@ -396,6 +422,7 @@
                         this.api = api;
                         api.start();
                         api.addEventListener('viewerready', () => {
+                            settled = true;
                             if (loaderOverlay) {
                                 loaderOverlay.style.opacity = '0';
                                 setTimeout(() => loaderOverlay.remove(), 350);
@@ -422,6 +449,7 @@
                         });
                     },
                     error: () => {
+                        settled = true;
                         if (loaderOverlay) loaderOverlay.remove();
                         if (isHandset(this.config)) {
                             renderProceduralPhone(this.container, this.config).then(p => { this.procedural = p; });
@@ -452,6 +480,7 @@
                     }
                 });
             } catch (e) {
+                settled = true;
                 if (loaderOverlay) loaderOverlay.remove();
                 if (isHandset(this.config)) {
                     this.procedural = await renderProceduralPhone(this.container, this.config);

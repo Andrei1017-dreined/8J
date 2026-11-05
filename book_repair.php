@@ -14,27 +14,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $time_slot = sanitize($_POST['time_slot'] ?? 'Afternoon (1:00 PM - 5:00 PM)');
     $reported_issues = sanitize($_POST['reported_issues'] ?? '');
 
+    // Server-side checks (the browser's required/min attributes can be bypassed)
+    $allowed_slots = ['Morning (9:00 AM - 12:00 PM)', 'Afternoon (1:00 PM - 5:00 PM)', 'Evening (5:00 PM - 7:00 PM)'];
+    $date_ok = DateTime::createFromFormat('Y-m-d', $scheduled_date);
+    $booking_error = '';
+    if ($customer_name === '' || $device_brand === '' || $device_model === '' || $reported_issues === '') {
+        $booking_error = 'Please fill in every required field.';
+    } elseif (!preg_match('/^(09\d{9}|\+639\d{9})$/', preg_replace('/[\s-]/', '', $customer_contact))) {
+        $booking_error = 'Please enter a valid mobile number (e.g. 09171234567).';
+    } elseif (!$date_ok || $date_ok->format('Y-m-d') !== $scheduled_date || $scheduled_date < date('Y-m-d')) {
+        $booking_error = 'Please choose a drop-off date from today onwards.';
+    } elseif (!in_array($time_slot, $allowed_slots, true)) {
+        $booking_error = 'Please choose one of the listed time windows.';
+    }
+    $customer_contact = preg_replace('/[\s-]/', '', $customer_contact);
+
     $full_issues = $reported_issues . " [Time Slot: " . $time_slot . "]";
-    $job_order_no = '8J-REP-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(2)));
+    // 6 hex characters: hard to guess, so job numbers can't be enumerated on the tracking page
+    $job_order_no = '8J-REP-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
-    try {
-        $stmt = $pdo->prepare("INSERT INTO repair_job_orders 
-            (job_order_no, customer_name, customer_contact, device_brand, device_model, reported_issues, scheduled_date, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, 'scheduled')");
-        
-        $stmt->execute([$job_order_no, $customer_name, $customer_contact, $device_brand, $device_model, $full_issues, $scheduled_date]);
+    if ($booking_error !== '') {
+        $message = 'Error: ' . $booking_error;
+    } else {
+        try {
+            $stmt = $pdo->prepare("INSERT INTO repair_job_orders
+                (job_order_no, customer_id, customer_name, customer_contact, device_brand, device_model, reported_issues, scheduled_date, status)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'scheduled')");
 
-        $ticket_issued = [
-            'ticket_no' => $job_order_no,
-            'customer_name' => $customer_name,
-            'device' => "{$device_brand} {$device_model}",
-            'date' => $scheduled_date,
-            'slot' => $time_slot
-        ];
-        $message = "Your repair service appointment has been scheduled successfully!";
+            $stmt->execute([$job_order_no, $_SESSION['user']['id'] ?? null, $customer_name, $customer_contact, $device_brand, $device_model, $full_issues, $scheduled_date]);
 
-    } catch (Exception $e) {
-        $message = "Error scheduling repair: " . $e->getMessage();
+            $ticket_issued = [
+                'ticket_no' => $job_order_no,
+                'contact' => $customer_contact,
+                'customer_name' => $customer_name,
+                'device' => "{$device_brand} {$device_model}",
+                'date' => $scheduled_date,
+                'slot' => $time_slot
+            ];
+            $message = "Your repair service appointment has been scheduled successfully!";
+
+        } catch (Exception $e) {
+            error_log('Repair booking failed: ' . $e->getMessage());
+            $message = "Error: we couldn't save your booking. Please try again or message us on Facebook.";
+        }
     }
 }
 
@@ -42,6 +64,47 @@ require_once __DIR__ . '/includes/header.php';
 ?>
 
 <style>
+    /* Numbered form steps */
+    .br-step {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-weight: 800;
+        font-size: 0.95rem;
+        color: #2b1120;
+        margin: 6px 0 14px;
+        padding-top: 4px;
+    }
+    .br-step span {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        background: #db2777;
+        color: #fff;
+        display: inline-grid;
+        place-items: center;
+        font-size: 0.78rem;
+        box-shadow: 0 0 0 4px #fce7f3;
+    }
+    .br-step-badge {
+        width: 52px;
+        height: 52px;
+        border-radius: 16px;
+        background: linear-gradient(135deg, #f472b6, #db2777);
+        color: #fff;
+        display: grid;
+        place-items: center;
+        font-size: 1.3rem;
+        flex: none;
+        box-shadow: 0 8px 20px -8px rgba(219, 39, 119, 0.6);
+    }
+    /* The summary sticks below the navbar instead of sliding over it */
+    .br-summary { z-index: 5; }
+    @media (max-width: 991.98px) { .br-summary { position: static !important; } }
+    @media print {
+        .navbar-custom, footer, .btn, .alert { display: none !important; }
+    }
+
     /* Light Pink Brand Pills & Chips */
     .brand-pill {
         border: 1px solid #fbcfe8 !important;
@@ -195,7 +258,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <div class="p-4 bg-light rounded-4 border my-3 mx-auto" style="max-width: 440px;">
                         <span class="text-muted small text-uppercase fw-bold d-block" style="letter-spacing: 1px;">Job Order Tracking Ticket</span>
-                        <h2 class="fw-extrabold text-dark font-monospace my-2 letter-spacing-1"><?= $ticket_issued['ticket_no'] ?></h2>
+                        <h2 class="fw-extrabold text-dark font-monospace my-2 letter-spacing-1"><?= htmlspecialchars($ticket_issued['ticket_no']) ?></h2>
                         <div class="small text-muted border-top pt-2 mt-2">
                             Device: <strong class="text-dark"><?= htmlspecialchars($ticket_issued['device']) ?></strong><br>
                             Schedule: <strong class="text-dark"><?= date('F d, Y', strtotime($ticket_issued['date'])) ?></strong> (<?= htmlspecialchars($ticket_issued['slot']) ?>)
@@ -203,16 +266,23 @@ require_once __DIR__ . '/includes/header.php';
                     </div>
 
                     <p class="small text-muted mb-4">
-                        You can track the diagnostic and repair stage of your smartphone online in real-time.
+                        Save this job order number. You can track the repair online with it, or with your mobile number.
                     </p>
 
                     <div class="d-flex flex-wrap justify-content-center gap-3">
-                        <a href="<?= BASE_URL ?>track_repair.php?ticket=<?= urlencode($ticket_issued['ticket_no']) ?>" class="btn btn-primary rounded-pill px-4">
+                        <a href="<?= BASE_URL ?>track_repair.php?q=<?= urlencode($ticket_issued['ticket_no']) ?>" class="btn btn-primary rounded-pill px-4">
                             <i class="fa-solid fa-magnifying-glass me-1"></i> Track Ticket Online
                         </a>
-                        <a href="<?= BASE_URL ?>print_job_order.php?ticket=<?= urlencode($ticket_issued['ticket_no']) ?>" target="_blank" class="btn btn-outline-dark rounded-pill px-4">
-                            <i class="fa-solid fa-print me-1"></i> Print Job Order Stub
-                        </a>
+                        <?php if (is_logged_in()): ?>
+                            <a href="<?= BASE_URL ?>print_job_order.php?ticket=<?= urlencode($ticket_issued['ticket_no']) ?>" target="_blank" class="btn btn-outline-dark rounded-pill px-4">
+                                <i class="fa-solid fa-print me-1"></i> Print Job Order Stub
+                            </a>
+                        <?php else: ?>
+                            <!-- print_job_order.php needs a login, so guests print this confirmation instead -->
+                            <button type="button" class="btn btn-outline-dark rounded-pill px-4" onclick="window.print()">
+                                <i class="fa-solid fa-print me-1"></i> Print this ticket
+                            </button>
+                        <?php endif; ?>
                         <a href="<?= BASE_URL ?>" class="btn btn-link text-muted text-decoration-none">Back to Home</a>
                     </div>
                 </div>
@@ -224,36 +294,39 @@ require_once __DIR__ . '/includes/header.php';
                     <div class="col-lg-7">
                         <div class="card card-custom p-4 p-md-5">
                             <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
-                                <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 50px; height: 50px; object-fit: contain;" alt="8J Logo">
+                                <div class="br-step-badge"><i class="fa-solid fa-screwdriver-wrench"></i></div>
                                 <div>
-                                    <h4 class="fw-extrabold mb-0">Repair Service Booking</h4>
-                                    <p class="text-muted small mb-0">Fast diagnosis, certified LCD/Battery renewal, & 30-day warranty</p>
+                                    <h4 class="fw-extrabold mb-0">Book a repair</h4>
+                                    <p class="text-muted small mb-0">Free diagnosis · Grade A parts · 30-day service warranty · takes about a minute</p>
                                 </div>
                             </div>
 
                             <form method="POST" action="" id="appointmentForm">
                                 <input type="hidden" name="action" value="book_repair">
-                                <input type="hidden" name="time_slot" id="selectedTimeSlot" value="Afternoon (1:00 PM - 5:00 PM)">
+                                <input type="hidden" name="time_slot" id="selectedTimeSlot" value="<?= htmlspecialchars($_POST['time_slot'] ?? 'Afternoon (1:00 PM - 5:00 PM)') ?>">
 
-                                <!-- Customer Details -->
+                                <!-- Step 1: Customer Details -->
+                                <div class="br-step"><span>1</span> Your details</div>
                                 <div class="row g-3 mb-4">
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold">Customer Full Name <span class="text-danger">*</span></label>
-                                        <input type="text" name="customer_name" id="inputName" class="form-control" placeholder="e.g. Maria Santos" value="<?= htmlspecialchars($current_user['fullname'] ?? '') ?>" required oninput="updateLiveSummary()">
+                                        <label class="form-label small fw-bold" for="inputName">Full name <span class="text-danger">*</span></label>
+                                        <input type="text" name="customer_name" id="inputName" class="form-control" placeholder="e.g. Maria Santos" value="<?= htmlspecialchars($_POST['customer_name'] ?? ($current_user['fullname'] ?? '')) ?>" required autocomplete="name" oninput="updateLiveSummary()">
                                     </div>
                                     <div class="col-md-6">
-                                        <label class="form-label small fw-bold">Contact Mobile Number <span class="text-danger">*</span></label>
-                                        <input type="text" name="customer_contact" id="inputContact" class="form-control" placeholder="09xxxxxxxxx" value="<?= htmlspecialchars($current_user['contact_number'] ?? '') ?>" required oninput="updateLiveSummary()">
+                                        <label class="form-label small fw-bold" for="inputContact">Mobile number <span class="text-danger">*</span></label>
+                                        <input type="tel" name="customer_contact" id="inputContact" class="form-control" placeholder="09xxxxxxxxx" inputmode="tel" autocomplete="tel" pattern="(09|\+639)[0-9\s-]{9,12}" title="11-digit mobile number starting with 09" value="<?= htmlspecialchars($_POST['customer_contact'] ?? ($current_user['contact_number'] ?? '')) ?>" required oninput="updateLiveSummary()">
+                                        <div class="form-text small">We'll text you when it's ready. You can also use it to track the repair.</div>
                                     </div>
                                 </div>
 
-                                <!-- Smartphone Brand (Input + Listed Brand Pills below) -->
+                                <!-- Step 2: Smartphone Brand (Input + Listed Brand Pills below) -->
+                                <div class="br-step"><span>2</span> Your phone</div>
                                 <div class="mb-4">
-                                    <label class="form-label small fw-bold d-flex justify-content-between">
-                                        <span>Smartphone Brand <span class="text-danger">*</span></span>
+                                    <label class="form-label small fw-bold d-flex justify-content-between" for="inputBrand">
+                                        <span>Brand <span class="text-danger">*</span></span>
                                         <span class="text-muted fw-normal" style="font-size:0.75rem;">Type or pick below</span>
                                     </label>
-                                    <input type="text" name="device_brand" id="inputBrand" class="form-control" placeholder="e.g. Apple, Samsung, Xiaomi..." required oninput="onBrandType()">
+                                    <input type="text" name="device_brand" id="inputBrand" class="form-control" placeholder="e.g. Apple, Samsung, Xiaomi..." value="<?= htmlspecialchars($_POST['device_brand'] ?? '') ?>" required oninput="onBrandType()">
 
                                     <!-- Listed Phone Brands Grid -->
                                     <div class="mt-2 pt-1">
@@ -274,8 +347,8 @@ require_once __DIR__ . '/includes/header.php';
 
                                 <!-- Smartphone Model (Input + Reactive Suggestions) -->
                                 <div class="mb-4">
-                                    <label class="form-label small fw-bold">Device Model Name <span class="text-danger">*</span></label>
-                                    <input type="text" name="device_model" id="inputModel" class="form-control" placeholder="e.g. iPhone 13, Galaxy S22, Redmi Note 12..." required oninput="updateLiveSummary()">
+                                    <label class="form-label small fw-bold" for="inputModel">Model <span class="text-danger">*</span></label>
+                                    <input type="text" name="device_model" id="inputModel" class="form-control" placeholder="e.g. iPhone 13, Galaxy S22, Redmi Note 12..." value="<?= htmlspecialchars($_POST['device_model'] ?? '') ?>" required oninput="updateLiveSummary()">
                                     
                                     <!-- Dynamic Model Suggestions based on Brand -->
                                     <div class="mt-2" id="modelSuggestionsContainer" style="display: none;">
@@ -286,11 +359,12 @@ require_once __DIR__ . '/includes/header.php';
                                     </div>
                                 </div>
 
-                                <!-- Common Repair Symptoms Chips -->
+                                <!-- Step 3: Common Repair Symptoms Chips -->
+                                <div class="br-step"><span>3</span> What's wrong?</div>
                                 <div class="mb-4">
                                     <label class="form-label small fw-bold d-flex justify-content-between">
-                                        <span>Common Repair Symptoms</span>
-                                        <span class="text-muted fw-normal" style="font-size:0.75rem;">Click to add to description</span>
+                                        <span>Common problems</span>
+                                        <span class="text-muted fw-normal" style="font-size:0.75rem;">Tap all that apply</span>
                                     </label>
                                     <div class="d-flex flex-wrap gap-2 mb-2">
                                         <span class="issue-badge" data-issue="Broken LCD / Touch Screen Replacement" onclick="toggleIssue(this, 'Broken LCD / Touch Screen Replacement')">
@@ -319,15 +393,17 @@ require_once __DIR__ . '/includes/header.php';
                                         </span>
                                     </div>
 
-                                    <textarea name="reported_issues" id="inputIssues" class="form-control" rows="3" placeholder="Describe symptoms or additional details (e.g. dropped on floor, display is black with vibration, battery drops from 50% to zero)" required oninput="syncBadgesFromTextarea(); updateLiveSummary();"></textarea>
+                                    <label class="form-label small fw-bold" for="inputIssues">Describe the problem <span class="text-danger">*</span></label>
+                                    <textarea name="reported_issues" id="inputIssues" class="form-control" rows="3" placeholder="e.g. dropped on the floor, screen is black but it vibrates, battery drops from 50% to zero" required oninput="syncBadgesFromTextarea(); updateLiveSummary();"><?= htmlspecialchars($_POST['reported_issues'] ?? '') ?></textarea>
                                 </div>
 
-                                <!-- Preferred Date & Time Window -->
+                                <!-- Step 4: Preferred Date & Time Window -->
+                                <div class="br-step"><span>4</span> When will you drop it off?</div>
                                 <div class="mb-4">
-                                    <label class="form-label small fw-bold">Preferred Drop-Off Date <span class="text-danger">*</span></label>
-                                    <input type="date" name="scheduled_date" id="inputDate" class="form-control mb-3" value="<?= date('Y-m-d') ?>" min="<?= date('Y-m-d') ?>" required onchange="updateLiveSummary()">
+                                    <label class="form-label small fw-bold" for="inputDate">Drop-off date <span class="text-danger">*</span></label>
+                                    <input type="date" name="scheduled_date" id="inputDate" class="form-control mb-3" value="<?= htmlspecialchars($_POST['scheduled_date'] ?? date('Y-m-d')) ?>" min="<?= date('Y-m-d') ?>" required onchange="updateLiveSummary()">
 
-                                    <label class="form-label small fw-bold">Select Preferred Time Window</label>
+                                    <label class="form-label small fw-bold">Time window</label>
                                     <div class="row g-2">
                                         <div class="col-4">
                                             <div class="time-slot-card" onclick="selectSlot(this, 'Morning (9:00 AM - 12:00 PM)')">
@@ -359,7 +435,7 @@ require_once __DIR__ . '/includes/header.php';
 
                     <!-- Live Reactive Summary Side Column -->
                     <div class="col-lg-5">
-                        <div class="card card-custom p-4 sticky-top shadow-sm" style="top: 85px;">
+                        <div class="card card-custom p-4 sticky-top shadow-sm br-summary" style="top: 90px;">
                             <div class="d-flex align-items-center justify-content-between border-bottom pb-3 mb-3">
                                 <div>
                                     <span class="badge bg-dark text-white px-2 py-1 rounded" style="font-size: 0.68rem;">LIVE SUMMARY</span>
@@ -619,6 +695,19 @@ function updateLiveSummary() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    if (!document.getElementById('appointmentForm')) return; // confirmation screen: no form to summarise
+    // After a validation error the form is re-filled; restore the chosen time slot and symptom chips too
+    const slot = document.getElementById('selectedTimeSlot');
+    if (slot) {
+        document.querySelectorAll('.time-slot-card').forEach(c => {
+            const on = (c.getAttribute('onclick') || '').indexOf(slot.value) !== -1;
+            c.classList.toggle('active', on);
+        });
+        const lbl = document.getElementById('liveSlotLabel');
+        if (lbl) lbl.innerText = slot.value;
+    }
+    if (document.getElementById('inputIssues') && typeof syncBadgesFromTextarea === 'function') syncBadgesFromTextarea();
+    if (document.getElementById('inputBrand') && document.getElementById('inputBrand').value && typeof onBrandType === 'function') onBrandType();
     updateLiveSummary();
 });
 </script>
