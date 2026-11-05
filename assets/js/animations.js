@@ -226,9 +226,11 @@
         // Smooth Anchor Link Scrolling
         document.querySelectorAll('a[href^="#"]').forEach(anchor => {
             anchor.addEventListener('click', function (e) {
+                // The href can be rewritten later (e.g. to a product URL), so re-check it is still an in-page anchor
                 const href = this.getAttribute('href');
-                if (!href || href === '#' || this.hasAttribute('data-bs-toggle')) return;
-                const targetEl = document.querySelector(href);
+                if (!href || href === '#' || href.charAt(0) !== '#' || this.hasAttribute('data-bs-toggle')) return;
+                let targetEl = null;
+                try { targetEl = document.querySelector(href); } catch (err) { return; }
                 if (targetEl) {
                     e.preventDefault();
                     const rect = targetEl.getBoundingClientRect();

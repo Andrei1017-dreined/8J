@@ -717,9 +717,81 @@ try {
 .scrolly-progress-fill {
     height: 100%;
     width: 25%;
-    background: linear-gradient(90deg, #f472b6, #38bdf8);
+    background: linear-gradient(90deg, #f9a8d4, #f472b6);
     border-radius: 999px;
     transition: width 0.08s linear;
+}
+
+/* ---- Live 3D phone in the flagship stage (replaces the flat photo once WebGL is ready) ---- */
+.scrolly-track,
+.scrolly-track[style] {
+    background: radial-gradient(120% 85% at 50% 32%, #3d172c 0%, #220c19 52%, #12060d 100%) !important;
+}
+.scrolly-aura {
+    background: radial-gradient(circle, rgba(244, 114, 182, 0.30) 0%, rgba(219, 39, 119, 0.12) 45%, transparent 72%) !important;
+}
+.scrolly-floor {
+    position: absolute;
+    left: 50%;
+    bottom: 9%;
+    width: min(70vw, 760px);
+    height: 140px;
+    transform: translateX(-50%);
+    background: radial-gradient(ellipse at center, rgba(249, 168, 212, 0.22) 0%, rgba(249, 168, 212, 0.06) 45%, transparent 70%);
+    pointer-events: none;
+    z-index: 2;
+}
+.scrolly-3d {
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    opacity: 0;
+    transition: opacity 0.9s ease;
+}
+.scrolly-track.has-3d .scrolly-3d { opacity: 1; }
+.scrolly-track.has-3d .scrolly-hero-cutout { visibility: hidden; }
+.scrolly-track.has-3d .scrolly-floor-shadow { opacity: 0; }
+.scrolly-track.has-3d .scrolly-phone-rig { z-index: 5; pointer-events: none; }
+.scrolly-track.has-3d .scrolly-angle-tabs { pointer-events: auto; }
+.scrolly-track .scrolly-Spec-pill {
+    background: rgba(34, 12, 25, 0.78);
+    border-color: rgba(249, 168, 212, 0.22);
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.45);
+}
+.scrolly-track .scrolly-switcher,
+.scrolly-track .scrolly-angle-tabs {
+    background: rgba(34, 12, 25, 0.72);
+    border-color: rgba(249, 168, 212, 0.22);
+}
+.scrolly-track .scrolly-switcher button.active,
+.scrolly-track .scrolly-angle-tab-btn.active {
+    background: #f9a8d4;
+    color: #3b0a24;
+}
+.scrolly-swatch {
+    display: inline-block;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    margin-right: 6px;
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.45);
+    vertical-align: -1px;
+}
+.scrolly-stage-label {
+    font-size: 0.72rem;
+    color: #fbcfe8;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+}
+.scrolly-track .p3d-label { background: #fff; color: #831843; }
+@media (max-width: 991px) {
+    .scrolly-stage-center { min-height: 460px; }
+}
+@media (max-width: 575px) {
+    .scrolly-switcher { max-width: calc(100vw - 24px); overflow-x: auto; scrollbar-width: none; }
+    .scrolly-switcher button { white-space: nowrap; padding: 7px 12px; }
+    .scrolly-angle-tabs { max-width: calc(100vw - 24px); overflow-x: auto; scrollbar-width: none; }
+    .scrolly-angle-tab-btn { white-space: nowrap; }
 }
 </style>
 
@@ -748,6 +820,9 @@ try {
 
             <!-- Center 3D Scroll-Animated Hardware Stage -->
             <div class="scrolly-stage-center" id="scrollyStageCenter">
+                <div class="scrolly-floor" aria-hidden="true"></div>
+                <!-- Live 3D handset (phone-3d-model.js); the photo below stays as the fallback -->
+                <div class="scrolly-3d" id="scrolly3D" aria-hidden="true"></div>
                 <div class="scrolly-Spec-pill p1" id="scrollyPill1">
                     <div class="lbl" id="sp1Lbl"><i class="fa-solid fa-microchip me-1"></i> CHIPSET ARCHITECTURE</div>
                     <div class="val" id="sp1Val">Apple A17 Pro 3nm • 6-Core GPU</div>
@@ -782,11 +857,11 @@ try {
 
             <!-- Bottom Price Lockup, Scroll Progress & CTA -->
             <div class="container position-relative" style="z-index: 5;">
-                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 px-3 py-2.5 rounded-pill mx-auto" style="max-width: 820px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.20); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 px-3 py-2.5 rounded-pill mx-auto" style="max-width: 820px; background: rgba(34, 12, 25, 0.86); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(249,168,212,0.22); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.45);">
                     <div class="d-flex align-items-center gap-3 ps-2">
                         <div>
-                            <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8;">Counter Pick-Up Price</div>
-                            <div class="fw-extrabold" id="scrollyPrice" style="color: #4ade80; font-size: 1.55rem; line-height: 1.1; letter-spacing: -0.02em;">₱68,990.00</div>
+                            <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #f9a8d4;">Counter Pick-Up Price</div>
+                            <div class="fw-extrabold" id="scrollyPrice" style="color: #ffffff; font-size: 1.55rem; line-height: 1.1; letter-spacing: -0.02em;">₱68,990.00</div>
                         </div>
                         <div class="d-none d-sm-flex align-items-center gap-2 ps-3 border-start border-light border-opacity-20">
                             <div class="scrolly-progress-bar"><div class="scrolly-progress-fill" id="scrollyProgFill"></div></div>
@@ -825,6 +900,11 @@ try {
                     base + 'assets/img/products/showcase_iphone_15_pro_4.png'
                 ],
                 frameLabels: ['Natural Titanium', 'Blue Titanium', 'Black Titanium', 'White Titanium'],
+                model3d: { brand: 'Apple', name: 'iPhone 15 Pro Max', model: 'iPhone 15 Pro Max', color: 'Natural Titanium', modelUrl: <?= json_encode(local_3d_model_url('Apple', 'iPhone 15 Pro Max')) ?> },
+                finishes: [
+                    { name: 'Natural Titanium', hex: '#a8a296' }, { name: 'Blue Titanium', hex: '#3d4858' },
+                    { name: 'Black Titanium', hex: '#2c2d30' }, { name: 'White Titanium', hex: '#e4e2dd' }
+                ],
                 specs: [
                     ['CHIPSET ARCHITECTURE', 'Apple A17 Pro 3nm • 6-Core GPU', 'fa-microchip'],
                     ['PRO CAMERA SYSTEM', '48MP Main • 5x Optical Telephoto', 'fa-camera-retro'],
@@ -848,6 +928,10 @@ try {
                     base + 'assets/img/products/showcase_honor_x9c_3.png'
                 ],
                 frameLabels: ['Front & Back View', 'Curved Display', 'Ultra-Bounce Close-up'],
+                model3d: { brand: 'Honor', name: 'HONOR X9c 5G', model: 'X9c 5G', modelUrl: <?= json_encode(local_3d_model_url('Honor', 'X9c 5G')) ?> },
+                finishes: [
+                    { name: 'Jade Cyan', hex: '#8cc4b9' }, { name: 'Titanium Black', hex: '#26272b' }, { name: 'Titanium Purple', hex: '#b6a5c9' }
+                ],
                 specs: [
                     ['ANTI-DROP ARMOR', '360° Ultra-Bounce Curved Shield', 'fa-shield-halved'],
                     ['OPTICAL CAMERA', '108MP OIS Ultra-Clear Main Lens', 'fa-camera-retro'],
@@ -871,6 +955,10 @@ try {
                     base + 'assets/img/products/showcase_infinix_gt20_3.png'
                 ],
                 frameLabels: ['Mecha Silver Chassis', 'RGB Loop Optics', 'Esports Gaming Profile'],
+                model3d: { brand: 'Infinix', name: 'Infinix GT 20 Pro', model: 'GT 20 Pro', modelUrl: <?= json_encode(local_3d_model_url('Infinix', 'GT 20 Pro')) ?> },
+                finishes: [
+                    { name: 'Mecha Silver', hex: '#c8cbd0' }, { name: 'Mecha Blue', hex: '#2f4a7a' }, { name: 'Mecha Orange', hex: '#e2733a' }
+                ],
                 specs: [
                     ['DUAL GAMING CHIP', 'Dimensity 8200 Ultimate + Pixelworks', 'fa-microchip'],
                     ['ESPORTS DISPLAY', '6.78" 144Hz Bezel-Less AMOLED', 'fa-mobile-screen'],
@@ -894,6 +982,10 @@ try {
                     base + 'assets/img/products/showcase_realme_13_3.png'
                 ],
                 frameLabels: ['Speed Green Full View', 'Speed Wave Island', '120Hz Bezel Profile'],
+                model3d: { brand: 'realme', name: 'realme 13 5G', model: '13 5G', modelUrl: <?= json_encode(local_3d_model_url('Realme', '13 5G')) ?> },
+                finishes: [
+                    { name: 'Speed Green', hex: '#86c2a0' }, { name: 'Dark Purple', hex: '#3e2c52' }
+                ],
                 specs: [
                     ['5G PROCESSOR', 'MediaTek Dimensity 6300 5G Octa-Core', 'fa-microchip'],
                     ['STABILIZED CAMERA', '50MP OIS Speed-Wave Camera Island', 'fa-camera-retro'],
@@ -905,6 +997,29 @@ try {
 
         let activeDev = 0;
         let lastFrameIdx = 0;
+        let studio = null;           // live 3D handset (null until WebGL + Three.js are ready)
+        const isDesktopScrolly = () => window.innerWidth >= 992;
+        // Only iPhones (or phones with a real .glb model file) are shown in 3D; Android showcase
+        // phones keep their product photos because a generated stand-in isn't accurate enough
+        const uses3D = d => !!d.model3d && (d.model3d.brand === 'Apple' || !!d.model3d.modelUrl);
+        const live3D = () => !!studio && uses3D(scrollyDevices[activeDev]);
+
+        // Tabs under the phone: real colour finishes when the 3D model is live, photo angles otherwise
+        function rebuildScrollyTabs(d) {
+            const tabs = document.getElementById('scrollyAngleTabs');
+            if (!tabs) return;
+            tabs.innerHTML = '';
+            const items = live3D() ? d.finishes : d.frameLabels.map(l => ({ name: l }));
+            items.forEach((it, i) => {
+                const b = document.createElement('button');
+                b.type = 'button';
+                b.className = 'scrolly-angle-tab-btn' + (i === 0 ? ' active' : '');
+                b.innerHTML = (it.hex ? '<span class="scrolly-swatch" style="background:' + it.hex + '"></span>' : '');
+                b.appendChild(document.createTextNode(it.name));
+                b.onclick = function () { setScrollyFrame(i, this); };
+                tabs.appendChild(b);
+            });
+        }
 
         window.selectScrollyDevice = function (idx, btn) {
             activeDev = idx;
@@ -937,19 +1052,14 @@ try {
                 if (pill) pill.style.borderColor = 'rgba(255, 255, 255, 0.20)';
             }
 
-            // Rebuild Angle / Colorway Tabs for active phone
-            const tabsContainer = document.getElementById('scrollyAngleTabs');
-            if (tabsContainer) {
-                tabsContainer.innerHTML = '';
-                d.frameLabels.forEach((label, fIdx) => {
-                    const tBtn = document.createElement('button');
-                    tBtn.type = 'button';
-                    tBtn.className = 'scrolly-angle-tab-btn' + (fIdx === 0 ? ' active' : '');
-                    tBtn.textContent = label;
-                    tBtn.onclick = function () { setScrollyFrame(fIdx, this); };
-                    tabsContainer.appendChild(tBtn);
-                });
+            // Swap the live 3D handset and rebuild the colour / angle tabs
+            if (studio) {
+                const on = uses3D(d);
+                document.getElementById('scrollyEntrance').classList.toggle('has-3d', on);
+                studio.paused = !on;                      // stop rendering while the photo is shown
+                if (on) studio.setModel(Object.assign({ embedded: true, finishes: d.finishes }, d.model3d));
             }
+            rebuildScrollyTabs(d);
 
             if (btn) {
                 btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
@@ -960,6 +1070,12 @@ try {
 
         window.setScrollyFrame = function (fIdx, btn) {
             const d = scrollyDevices[activeDev];
+            if (live3D() && d.finishes[fIdx]) {
+                studio.setFinish(d.finishes[fIdx].hex);
+                const tabs = document.getElementById('scrollyAngleTabs');
+                if (tabs) tabs.querySelectorAll('.scrolly-angle-tab-btn').forEach((b, i) => b.classList.toggle('active', i === fIdx));
+                return;
+            }
             if (!d.frames[fIdx]) return;
             lastFrameIdx = fIdx;
             const img = document.getElementById('scrollyPhoneImg');
@@ -1001,8 +1117,31 @@ try {
                 bgWord.style.transform = `translate(-50%, calc(-50% + ${wordY.toFixed(1)}px)) scale(${(0.95 + p * 0.12).toFixed(3)})`;
             }
 
-            // Switch frame as user scrolls through fractions
             const d = scrollyDevices[activeDev];
+
+            // Live 3D: scroll tells the story - front, turn to the cameras, then open it up
+            if (live3D()) {
+                rig.style.transform = 'none';
+                const ease = t => t * t * (3 - 2 * t);
+                const seg = (a, b) => ease(Math.max(0, Math.min(1, (p - a) / (b - a))));
+                let rotY = 0.45 + seg(0.05, 0.4) * (Math.PI - 0.45);               // front -> back (cameras)
+                rotY += seg(0.42, 0.66) * (Math.PI * 2 - 1.12 - Math.PI);          // back -> three-quarter
+                const explode = seg(0.64, 0.88);
+                if (isDesktopScrolly()) studio.setPose(rotY, 0.06 + Math.sin(p * Math.PI) * 0.08, explode);
+                if (prog) prog.style.width = Math.round(15 + p * 85) + '%';
+                if (lbl) lbl.textContent = (explode > 0.5 && !studio.isReal) ? 'Inside the phone' : (p > 0.25 && p < 0.6 ? 'Camera & back glass' : 'Front & display');
+                [1, 2, 3, 4].forEach((n, i) => {
+                    const pill = document.getElementById('scrollyPill' + n);
+                    if (!pill) return;
+                    const localP = Math.max(0, Math.min(1, (p - i * 0.12) / 0.35));
+                    const dir = (n % 2 === 1) ? -1 : 1;
+                    pill.style.opacity = (0.35 + localP * 0.65).toFixed(2) * (1 - explode * 0.85);
+                    pill.style.transform = `translateX(${((1 - localP) * 44 * dir).toFixed(1)}px)`;
+                });
+                return;
+            }
+
+            // Switch frame as user scrolls through fractions
             const frameIdx = Math.min(d.frames.length - 1, Math.floor(p * d.frames.length));
             if (frameIdx !== lastFrameIdx && d.frames[frameIdx]) {
                 lastFrameIdx = frameIdx;
@@ -1035,6 +1174,23 @@ try {
 
         window.addEventListener('scroll', () => requestAnimationFrame(updateScrollyAnimation), { passive: true });
         document.addEventListener('DOMContentLoaded', updateScrollyAnimation);
+
+        // Bring up the live 3D handset (product-3d-viewer.js is loaded by the footer)
+        window.addEventListener('load', async () => {
+            const host = document.getElementById('scrolly3D');
+            if (!host || typeof window.renderProceduralPhone !== 'function') return;
+            const d = scrollyDevices[activeDev];
+            const s = await window.renderProceduralPhone(host, Object.assign({ embedded: true, finishes: d.finishes }, d.model3d));
+            if (!s) return;                         // no WebGL / offline: the photo stays
+            studio = s;
+            studio.autoSpin = !isDesktopScrolly(); // phones/tablets: no sticky scroll, so let it turn on its own
+            const on = uses3D(scrollyDevices[activeDev]);
+            document.getElementById('scrollyEntrance').classList.toggle('has-3d', on);
+            studio.paused = !on;
+            rebuildScrollyTabs(scrollyDevices[activeDev]);
+            updateScrollyAnimation();
+            window.addEventListener('resize', () => { if (studio) studio.autoSpin = !isDesktopScrolly(); }, { passive: true });
+        });
     })();
     </script>
 

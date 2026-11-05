@@ -281,6 +281,50 @@ $current_page = basename($_SERVER['PHP_SELF']);
         .nav-link:hover .ui-icon, .btn:hover .ui-icon {
             transform: scale(1.15);
         }
+        /* Classes used across the site that Bootstrap 5 doesn't define (they silently did nothing,
+           which is why "extrabold" headings rendered at the thin 300 display weight) */
+        .fw-extrabold { font-weight: 800 !important; }
+        .py-0\.5 { padding-top: .125rem !important; padding-bottom: .125rem !important; }
+        .px-2\.5 { padding-left: .625rem !important; padding-right: .625rem !important; }
+        .py-1\.5 { padding-top: .375rem !important; padding-bottom: .375rem !important; }
+        .py-2\.5 { padding-top: .625rem !important; padding-bottom: .625rem !important; }
+        .mt-2\.5 { margin-top: .625rem !important; }
+        .me-1\.5 { margin-right: .375rem !important; }
+        .ms-1\.5 { margin-left: .375rem !important; }
+        .display-5, .display-6 { letter-spacing: -0.025em; line-height: 1.12; }
+
+        /* Calm the circuit wallpaper so content reads first */
+        .global-page-bg::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(180deg, rgba(255, 245, 248, 0.72) 0%, rgba(255, 245, 248, 0.86) 100%);
+        }
+
+        /* Wide tables scroll inside their card instead of stretching the whole page on phones */
+        main, .row > [class*="col"] { min-width: 0; }
+        .table-responsive { max-width: 100%; }
+
+        /* Navbar: never wrap labels or push past the screen edge */
+        .navbar-custom .nav-link, .navbar-custom .btn { white-space: nowrap; }
+        .nav-user-meta .fw-semibold { max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #cart-counter { background: #db2777 !important; border: 2px solid #fff; }
+        @media (max-width: 1699.98px) {
+            .nav-counter-badge { display: none !important; }
+            .nav-user-meta { display: none; }
+        }
+        @media (min-width: 1200px) and (max-width: 1399.98px) {
+            .navbar-custom .nav-link.px-3 { padding-left: .7rem !important; padding-right: .7rem !important; }
+        }
+        @media (max-width: 1199.98px) {
+            .navbar-custom .navbar-collapse { padding: .75rem 0 1rem; }
+            .nav-actions { flex-direction: row; flex-wrap: wrap; align-items: center; }
+        }
+        @media (max-width: 575.98px) {
+            .navbar-custom .container-fluid { padding-left: 14px !important; padding-right: 14px !important; }
+            .navbar-custom .navbar-brand { font-size: .95rem; max-width: calc(100% - 64px); }
+            .navbar-custom .navbar-brand small { display: none !important; }
+        }
         .table thead th {
             background-color: #f4f4f5;
             color: #18181b;
@@ -297,7 +341,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
     <!-- Persistent GPU-Accelerated Fixed Wallpaper Layer -->
     <div class="global-page-bg" aria-hidden="true"></div>
     <!-- Top Navbar -->
-    <nav class="navbar navbar-expand-lg navbar-custom sticky-top">
+    <nav class="navbar navbar-expand-xl navbar-custom sticky-top">
         <div class="container-fluid px-4">
             <a class="navbar-brand fw-bold d-flex align-items-center gap-2" href="<?= BASE_URL ?>">
                 <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 42px; height: 42px; object-fit: contain;" alt="8J Logo">
@@ -307,12 +351,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </div>
             </a>
             
-            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav">
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Open menu">
                 <span class="navbar-toggler-icon"></span>
             </button>
 
             <div class="collapse navbar-collapse" id="topNav">
-                <ul class="navbar-nav me-auto mb-2 mb-lg-0 ms-lg-3 gap-lg-1">
+                <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-3 gap-xl-1">
                     <li class="nav-item">
                         <a class="nav-link rounded-pill px-3 <?= $current_page == 'index.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>">
                             <i class="fa-solid fa-house me-1 text-primary" style="font-size: 0.85rem;"></i> Home
@@ -336,7 +380,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 </ul>
 
                 <!-- Global Quick Search Form -->
-                <form action="<?= BASE_URL ?>catalog.php" method="GET" class="d-none d-lg-flex align-items-center me-3" style="width: 245px;">
+                <form action="<?= BASE_URL ?>catalog.php" method="GET" class="d-none d-xxl-flex align-items-center me-3" style="width: 230px;">
                     <div class="input-group input-group-sm rounded-pill overflow-hidden border" style="background: #fff5f8; border-color: #fbcfe8 !important;">
                         <span class="input-group-text border-0 bg-transparent ps-3 pe-1 text-muted">
                             <i class="fa-solid fa-magnifying-glass" style="font-size: 0.78rem; color: #db2777;"></i>
@@ -345,8 +389,8 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     </div>
                 </form>
 
-                <ul class="navbar-nav ms-auto align-items-center gap-2">
-                    <li class="nav-item d-none d-xxl-block">
+                <ul class="navbar-nav ms-auto align-items-xl-center gap-2 nav-actions">
+                    <li class="nav-item d-none d-xxl-block nav-counter-badge">
                         <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1" style="font-size: 0.74rem;">
                             <span class="pulse-indicator green"></span> Counter Open • 1-Hr Pick-Up
                         </span>
@@ -364,12 +408,12 @@ $current_page = basename($_SERVER['PHP_SELF']);
                     </li>
                     
                     <?php if (is_logged_in()): ?>
-                        <li class="nav-item dropdown ms-2">
-                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown">
-                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center" style="width: 34px; height: 34px; font-weight: 700;">
-                                    <?= strtoupper(substr($current_user['fullname'] ?? 'U', 0, 1)) ?>
+                        <li class="nav-item dropdown ms-xl-2">
+                            <a class="nav-link dropdown-toggle d-flex align-items-center gap-2" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                                <div class="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width: 34px; height: 34px; font-weight: 700;">
+                                    <?= htmlspecialchars(mb_strtoupper(mb_substr($current_user['fullname'] ?? 'U', 0, 1))) ?>
                                 </div>
-                                <div>
+                                <div class="nav-user-meta">
                                     <div class="fw-semibold text-dark" style="font-size:0.85rem;"><?= htmlspecialchars($current_user['fullname']) ?></div>
                                     <div class="badge bg-secondary" style="font-size:0.65rem;"><?= ucfirst($current_user['role']) ?></div>
                                 </div>

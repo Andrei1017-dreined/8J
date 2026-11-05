@@ -154,6 +154,35 @@ function audit_log($action, $module, $details = '') {
 }
 
 /**
+ * Real 3D model file for a phone, if one has been added to assets/models/.
+ * File name = brand + model in lowercase, words joined by "-", storage/RAM removed,
+ * e.g. "Infinix Hot 50 (256GB)" -> assets/models/infinix-hot-50.glb
+ * Returns the public URL, or null when no file exists (the generated model is used instead).
+ */
+function local_3d_model_slug($brand, $name) {
+    $name = preg_replace('/\s*\([^)]*\)/', '', (string)$name);          // drop "(256GB)", "(8GB RAM)"
+    $brand = trim((string)$brand);
+    if ($brand !== '' && stripos($name, $brand) !== 0) {
+        $name = $brand . ' ' . $name;                                     // "13 5G" -> "Realme 13 5G"
+    }
+    $slug = strtolower(trim($name));
+    $slug = str_replace('+', ' plus', $slug);
+    $slug = preg_replace('/[^a-z0-9]+/', '-', $slug);
+    return trim($slug, '-');
+}
+
+function local_3d_model_url($brand, $name) {
+    $slug = local_3d_model_slug($brand, $name);
+    foreach (['glb', 'gltf'] as $ext) {
+        $file = __DIR__ . '/../assets/models/' . $slug . '.' . $ext;
+        if ($slug !== '' && is_file($file)) {
+            return BASE_URL . 'assets/models/' . $slug . '.' . $ext . '?v=' . filemtime($file);
+        }
+    }
+    return null;
+}
+
+/**
  * Returns outsourced official CDN commercial video URLs (lightweight hover loop + HD stream)
  * matched to the product or smartphone model. Zero local storage footprint.
  */

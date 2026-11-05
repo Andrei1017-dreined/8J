@@ -209,6 +209,76 @@
         return Boolean(resolveSketchfabModelUID(config));
     }
 
+    // ------------------------------------------------------------------------
+    // Real-time 3D fallback for phones without a Sketchfab CAD model
+    // ------------------------------------------------------------------------
+    const THREE_URL = 'https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js';
+    const ROOM_ENV_URL = 'https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/environments/RoomEnvironment.js';
+    const scriptPromises = {};
+
+    function loadScript(src) {
+        if (!scriptPromises[src]) {
+            scriptPromises[src] = new Promise((resolve, reject) => {
+                const s = document.createElement('script');
+                s.src = src;
+                s.async = true;
+                s.onload = resolve;
+                s.onerror = reject;
+                document.head.appendChild(s);
+            });
+        }
+        return scriptPromises[src];
+    }
+
+    // The generated model is only used for iPhones (as a fallback when the Sketchfab stream fails).
+    // Android phones only get 3D from a real CAD model or a .glb file - their camera hardware varies
+    // too much to generate convincingly.
+    function isHandset(config) {
+        if (!config) return false;
+        const hay = `${config.brand || ''} ${config.name || ''}`.toLowerCase();
+        if (/case|glass|protector|cable|charger|adapter|earbud|airpods|power ?bank|watch|magsafe/.test(hay)) return false;
+        return /\biphone\b/.test(hay);
+    }
+
+    async function renderProceduralPhone(container, config) {
+        if (config && config.embedded) {
+            // Homepage showcase: load quietly behind the existing photo; on failure the photo simply stays
+            try {
+                const c = document.createElement('canvas');
+                if (!(c.getContext('webgl') || c.getContext('experimental-webgl'))) return null;
+                if (!window.THREE) await loadScript(THREE_URL);
+                if (!window.THREE.RoomEnvironment) await loadScript(ROOM_ENV_URL).catch(() => {});
+                if (!window.Procedural3DPhone) await loadScript((window.BASE_URL_JS || '/') + 'assets/js/phone-3d-model.js?v=21');
+                return new window.Procedural3DPhone(container, config);
+            } catch (e) {
+                return null;
+            }
+        }
+        container.innerHTML = `
+            <div class="d-flex flex-column align-items-center justify-content-center w-100 h-100" style="position:absolute;inset:0;">
+                <div class="spinner-border mb-2" role="status" style="width:2rem;height:2rem;border-width:2px;color:#db2777;"></div>
+                <span class="small fw-bold text-dark">Building 3D model…</span>
+            </div>`;
+        try {
+            if (!window.THREE) await loadScript(THREE_URL);
+            // Studio reflections; optional - the model has its own fallback environment
+            if (!window.THREE.RoomEnvironment) await loadScript(ROOM_ENV_URL).catch(() => {});
+            if (!window.Procedural3DPhone) {
+                const base = window.BASE_URL_JS || '/';
+                await loadScript(base + 'assets/js/phone-3d-model.js?v=21');
+            }
+            return new window.Procedural3DPhone(container, config);
+        } catch (e) {
+            container.innerHTML = `
+                <div class="d-flex flex-column align-items-center justify-content-center text-center p-4 w-100 h-100">
+                    <i class="fa-solid fa-cube fs-1 mb-2" style="color:#f9a8d4;"></i>
+                    <h6 class="fw-bold mb-1">3D view needs an internet connection</h6>
+                    <p class="text-muted small mb-0" style="max-width:320px;">The 3D engine couldn't be downloaded. Check your connection and try again.</p>
+                </div>`;
+            return null;
+        }
+    }
+
     // ========================================================================
     // SKETCHFAB 3D STUDIO CONTROLLER CLASS
     // ========================================================================
@@ -235,7 +305,17 @@
             this.config = Object.assign({}, this.config, newConfig || {});
             const targetUid = resolveSketchfabModelUID(this.config);
 
-            // If no verified online 3D model exists for this device, show honest luxury "No 3D Model Available" state
+            // A real model file in assets/models/ wins; otherwise phones without a CAD model get the generated one
+            if (this.config.modelUrl || (!targetUid && isHandset(this.config))) {
+                this.currentUid = null;
+                this.api = null;
+                this.iframe = null;
+                if (this.procedural) this.procedural.dispose();
+                this.procedural = await renderProceduralPhone(this.container, this.config);
+                return;
+            }
+
+            // Accessories without a verified model keep the honest "No 3D Model Available" state
             if (!targetUid) {
                 this.currentUid = null;
                 this.api = null;
@@ -343,6 +423,10 @@
                     },
                     error: () => {
                         if (loaderOverlay) loaderOverlay.remove();
+                        if (isHandset(this.config)) {
+                            renderProceduralPhone(this.container, this.config).then(p => { this.procedural = p; });
+                            return;
+                        }
                         this.container.innerHTML = `
                             <div class="d-flex flex-column align-items-center justify-content-center text-center p-4 w-100 h-100"
                                  style="background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f8fafc 65%, #f1f5f9 100%);">
@@ -369,6 +453,10 @@
                 });
             } catch (e) {
                 if (loaderOverlay) loaderOverlay.remove();
+                if (isHandset(this.config)) {
+                    this.procedural = await renderProceduralPhone(this.container, this.config);
+                    return;
+                }
                 this.container.innerHTML = `
                     <div class="d-flex flex-column align-items-center justify-content-center text-center p-4 w-100 h-100"
                          style="background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f8fafc 65%, #f1f5f9 100%);">
@@ -445,4 +533,5 @@
     window.Product3DViewer = Product3DStudio;
     window.resolveSketchfabModelUID = resolveSketchfabModelUID;
     window.hasOnline3DModel = hasOnline3DModel;
+    window.renderProceduralPhone = renderProceduralPhone;
 })();

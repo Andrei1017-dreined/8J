@@ -100,13 +100,13 @@ require_once __DIR__ . '/../includes/header.php';
         <?php require_once __DIR__ . '/../includes/sidebar.php'; ?>
 
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-            <div class="d-flex justify-content-between align-items-center mb-4 border-bottom pb-3">
+            <div class="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-4 border-bottom pb-3">
                 <div>
                     <h2 class="h3 fw-bold mb-1"><i class="fa-solid fa-clipboard-user text-primary me-2"></i>Smartphone Inspection & Staff Appraisal Desk</h2>
                     <p class="text-muted small mb-0">Conduct physical hardware inspection and establish the official staff trade-in or buyout cash offer</p>
                 </div>
-                <div>
-                    <span class="badge bg-dark text-white border p-2">
+                <div style="max-width: 100%;">
+                    <span class="badge bg-dark text-white border p-2 text-wrap text-start">
                         <i class="fa-solid fa-user-check text-success me-1"></i> Appraiser: <strong><?= htmlspecialchars($current_user['fullname']) ?></strong> (<?= ucfirst($current_user['role']) ?>)
                     </span>
                 </div>

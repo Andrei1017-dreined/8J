@@ -90,6 +90,12 @@ if (empty($gallery_imgs)) { $gallery_imgs[] = $main_image; }
 $is_handset = ($type === 'unit') || stripos($sku, 'PHN-') === 0;
 $brand_label = $item['brand'] ?? '8J';
 $condition_label = $type === 'unit' ? ($item['unit_condition'] ?? 'Certified') : ($is_handset ? 'Brand New' : 'Genuine');
+// 3D is only offered when it is a real model: a verified Sketchfab CAD stream (has_online_3d_model)
+// or a scanned/CAD file in assets/models/. Android phones are not given a generated stand-in.
+$model_file_url = local_3d_model_url($item['brand'] ?? '', $type === 'unit' ? ($item['model_name'] ?? '') : $item_name);
+if ($model_file_url) {
+    $has_3d = true;
+}
 ?>
 <style>
 .pd-wrap{max-width:1240px}
@@ -557,7 +563,10 @@ const detailProductConfig = {
     brand: <?= json_encode($item['brand'] ?? '') ?>,
     category: <?= json_encode($category_name) ?>,
     color: <?= json_encode($item['color'] ?? '') ?>,
+    model: <?= json_encode($type === 'unit' ? ($item['model_name'] ?? '') : preg_replace('/^' . preg_quote($item['brand'] ?? '', '/') . '\s*/i', '', $item_name)) ?>,
     type: <?= json_encode($type) ?>,
+    handset: <?= $is_handset ? 'true' : 'false' ?>,
+    modelUrl: <?= json_encode($model_file_url) ?>,
     image: pdImages[0]
 };
 
