@@ -141,8 +141,8 @@ if (!$job) {
                 <div style="display: flex; align-items: center; gap: 12px;">
                     <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 44px; height: 44px; object-fit: contain;" alt="8J Logo">
                     <div>
-                        <div class="brand-title">8J CELLPHONE ACCESSORIES & REPAIR</div>
-                        <div class="brand-sub">Tanauan City, Batangas • Contact: 0917-123-4567</div>
+                        <div class="brand-title">8J CELLPHONE &amp; ACCESSORIES</div>
+                        <div class="brand-sub">2nd Floor, Victory Mall Tanauan, Stall #S1, Tanauan City, Batangas • Contact: 0909-9833-981 / 0917-123-4567</div>
                         <div style="font-size: 11px; font-weight: bold; color: #09090b; margin-top: 2px;">CUSTOMER CLAIM STUB</div>
                     </div>
                 </div>
@@ -184,10 +184,18 @@ if (!$job) {
             </div>
 
             <div class="terms">
-                <strong>Terms & Conditions:</strong><br>
-                1. Please present this claim stub when picking up your repaired unit.<br>
-                2. Repaired hardware components come with a standard <strong>30-day service warranty</strong> (void if opened by third party, water-damaged, or physically cracked).<br>
-                3. Units left unclaimed after <strong>60 days</strong> will be forfeited to cover parts and storage expenses.
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div>
+                        <strong>Terms & Conditions:</strong><br>
+                        1. Please present this claim stub when picking up your repaired unit.<br>
+                        2. Repaired hardware components come with a standard <strong>30-day service warranty</strong> (void if opened by third party, water-damaged, or physically cracked).<br>
+                        3. Units left unclaimed after <strong>60 days</strong> will be forfeited to cover parts and storage expenses.
+                    </div>
+                    <div style="text-align: center; margin-left: 15px; flex-shrink: 0;">
+                        <div id="qrcodeJob" style="padding: 4px; background: #fff; border: 1px solid #cbd5e1; border-radius: 4px;"></div>
+                        <span style="font-size: 8.5px; color: #475569; display: block; margin-top: 3px;">Scan to Track</span>
+                    </div>
+                </div>
             </div>
 
             <div class="signatures">
@@ -200,8 +208,8 @@ if (!$job) {
         <div class="ticket" style="border-style: dotted;">
             <div class="header">
                 <div>
-                    <div class="brand-title">8J CELLPHONE REPAIR - SHOP COUNTER COPY</div>
-                    <div class="brand-sub">Internal Technician Routing Slip</div>
+                    <div class="brand-title">8J CELLPHONE &amp; ACCESSORIES - SHOP COUNTER COPY</div>
+                    <div class="brand-sub">Internal Technician Routing Slip • Victory Mall Tanauan Stall #S1</div>
                 </div>
                 <div class="ticket-number"><?= htmlspecialchars($job['job_order_no']) ?></div>
             </div>
@@ -222,5 +230,24 @@ if (!$job) {
             </div>
         </div>
     </div>
+
+    <!-- QR Code Script -->
+    <script src="<?= BASE_URL ?>assets/js/qrcode.min.js"></script>
+    <script>
+    document.addEventListener("DOMContentLoaded", function() {
+        const trackUrl = "<?= (isset($_SERVER['HTTP_HOST']) ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . BASE_URL ?>track_repair.php?ticket=<?= urlencode($job['job_order_no']) ?>";
+        const container = document.getElementById("qrcodeJob");
+        if (container && typeof QRCode !== 'undefined') {
+            new QRCode(container, {
+                text: trackUrl,
+                width: 72,
+                height: 72,
+                colorDark : "#0f172a",
+                colorLight : "#ffffff",
+                correctLevel : QRCode.CorrectLevel.M
+            });
+        }
+    });
+    </script>
 </body>
 </html>

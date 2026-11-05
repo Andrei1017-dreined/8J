@@ -135,7 +135,14 @@ require_once __DIR__ . '/../includes/header.php';
                                         </td>
                                         <td><span class="badge bg-light text-dark border"><?= htmlspecialchars($l['module']) ?></span></td>
                                         <td class="fw-semibold"><?= htmlspecialchars($l['action']) ?></td>
-                                        <td class="text-muted"><?= htmlspecialchars($l['details'] ?? '') ?></td>
+                                        <td style="max-width: 350px;">
+                                            <div class="text-truncate" 
+                                                 onclick="toggleAuditCell(this)" 
+                                                 title="Click to view full detail" 
+                                                 style="cursor: pointer; transition: all 0.2s ease;">
+                                                <?= htmlspecialchars($l['details'] ?? 'N/A') ?>
+                                            </div>
+                                        </td>
                                         <td class="small text-muted"><?= htmlspecialchars($l['ip_address'] ?? '') ?></td>
                                     </tr>
                                 <?php endforeach; ?>
@@ -156,5 +163,27 @@ require_once __DIR__ . '/../includes/header.php';
         </main>
     </div>
 </div>
+
+<script>
+function toggleAuditCell(el) {
+    if (el.classList.contains('text-truncate')) {
+        el.classList.remove('text-truncate');
+        el.style.whiteSpace = 'normal';
+        el.style.backgroundColor = '#fdf2f8';
+        el.style.padding = '4px 8px';
+        el.style.borderRadius = '4px';
+        el.style.border = '1px solid #f472b6';
+        el.title = 'Click to minimize';
+    } else {
+        el.classList.add('text-truncate');
+        el.style.whiteSpace = '';
+        el.style.backgroundColor = '';
+        el.style.padding = '';
+        el.style.borderRadius = '';
+        el.style.border = '';
+        el.title = 'Click to view full detail';
+    }
+}
+</script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

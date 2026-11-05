@@ -137,8 +137,13 @@ require_once __DIR__ . '/../includes/header.php';
                                                 <div class="fw-bold"><?= htmlspecialchars($job['device_brand'] . ' ' . $job['device_model']) ?></div>
                                                 <small class="text-muted">SN: <?= htmlspecialchars($job['device_imei_or_serial'] ?? 'N/A') ?></small>
                                             </td>
-                                            <td style="max-width: 180px;" class="text-truncate" title="<?= htmlspecialchars($job['reported_issues']) ?>">
-                                                <?= htmlspecialchars($job['reported_issues']) ?>
+                                            <td style="max-width: 220px;">
+                                                <div class="expandable-issue text-truncate" 
+                                                     onclick="toggleIssueText(this)" 
+                                                     title="Click to view full issue details" 
+                                                     style="cursor: pointer; transition: all 0.2s ease;">
+                                                    <?= htmlspecialchars($job['reported_issues']) ?>
+                                                </div>
                                             </td>
                                             <td>
                                                 <span class="badge bg-light text-dark border">
@@ -319,6 +324,26 @@ require_once __DIR__ . '/../includes/header.php';
 </div>
 
 <script>
+function toggleIssueText(el) {
+    if (el.classList.contains('text-truncate')) {
+        el.classList.remove('text-truncate');
+        el.style.whiteSpace = 'normal';
+        el.style.backgroundColor = '#fff0f5';
+        el.style.padding = '4px 8px';
+        el.style.borderRadius = '6px';
+        el.style.border = '1px solid #f472b6';
+        el.title = 'Click to collapse';
+    } else {
+        el.classList.add('text-truncate');
+        el.style.whiteSpace = '';
+        el.style.backgroundColor = '';
+        el.style.padding = '';
+        el.style.borderRadius = '';
+        el.style.border = '';
+        el.title = 'Click to view full issue details';
+    }
+}
+
 function openUpdateModal(job) {
     document.getElementById('modalJobId').value = job.id;
     document.getElementById('modalTitle').innerText = 'Update Ticket ' + job.job_order_no;

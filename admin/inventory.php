@@ -135,6 +135,25 @@ $products = $pdo->query("SELECT p.*, c.name as category_name FROM products p LEF
 // Fetch phone units
 $phone_units = $pdo->query("SELECT * FROM phone_units ORDER BY id DESC")->fetchAll();
 
+// Fetch physical inventory daily count sheet
+$daily_sheet = [];
+try {
+    $daily_sheet = $pdo->query("SELECT * FROM daily_inventory_log ORDER BY id ASC")->fetchAll();
+} catch (Exception $e) {}
+
+// Handle CSV export of physical sheet
+if (isset($_GET['export_sheet']) && $_GET['export_sheet'] === '1') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=8J_Physical_Count_Sheet_Days17_22_' . date('Ymd') . '.csv');
+    $out = fopen('php://output', 'w');
+    fputcsv($out, ['ID', 'Brand', 'Model Name', 'Storage', 'Day 17', 'Day 18', 'Day 19', 'Day 20', 'Day 21', 'Day 22 (Current Stock)', 'Unit Price (PHP)']);
+    foreach ($daily_sheet as $r) {
+        fputcsv($out, [$r['id'], $r['brand'], $r['model_name'], $r['storage_capacity'], $r['day_17'], $r['day_18'], $r['day_19'], $r['day_20'], $r['day_21'], $r['day_22'], $r['selling_price']]);
+    }
+    fclose($out);
+    exit;
+}
+
 $low_stock_accessories = array_filter($products, fn($p) => $p['status'] !== 'archived' && $p['stock_quantity'] <= $p['reorder_level']);
 $low_stock_count = count($low_stock_accessories);
 
@@ -191,6 +210,11 @@ require_once __DIR__ . '/../includes/header.php';
                 <li class="nav-item">
                     <button class="nav-link fw-bold" id="phones-tab" data-bs-toggle="pill" data-bs-target="#phones-pane">
                         <i class="fa-solid fa-mobile-screen me-2"></i>Smartphones & Units (<?= count($phone_units) ?>)
+                    </button>
+                </li>
+                <li class="nav-item">
+                    <button class="nav-link fw-bold" id="sheet-tab" data-bs-toggle="pill" data-bs-target="#sheet-pane">
+                        <i class="fa-solid fa-clipboard-check me-2"></i>Physical Count Log (Days 17-22) (<?= count($daily_sheet) ?>)
                     </button>
                 </li>
             </ul>
@@ -370,6 +394,82 @@ require_once __DIR__ . '/../includes/header.php';
                                                             'selling_price' => $unit['selling_price'], 'unit_condition' => $unit['unit_condition'],
                                                             'battery_health' => $unit['battery_health'], 'status' => $unit['status'], 'notes' => $unit['notes']
                                                         ]), ENT_QUOTES) ?>'><i class="fa-solid fa-pen"></i></button>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- PANE 3: PHYSICAL COUNT SHEET (DAYS 17-22) -->
+                <div class="tab-pane fade" id="sheet-pane">
+                    <div class="card card-custom p-3 mb-3">
+                        <div class="row g-2 align-items-center">
+                            <div class="col-md-7">
+                                <div class="input-group">
+                                    <span class="input-group-text bg-white border-end-0"><i class="fa-solid fa-magnifying-glass text-muted"></i></span>
+                                    <input type="text" id="sheetSearchInput" class="form-control border-start-0" placeholder="Search physical log by brand or model (Infinix, Honor, Realme, Itel, Oppo)..." onkeyup="filterSheetRows()">
+                                </div>
+                            </div>
+                            <div class="col-md-5 text-md-end d-flex gap-2 justify-content-md-end">
+                                <a href="?export_sheet=1" class="btn btn-outline-dark btn-sm rounded-pill px-3">
+                                    <i class="fa-solid fa-file-csv me-1 text-success"></i> Export CSV
+                                </a>
+                                <button type="button" class="btn btn-dark btn-sm rounded-pill px-3" onclick="window.print()">
+                                    <i class="fa-solid fa-print me-1"></i> Print Sheet
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="card card-custom">
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover align-middle mb-0 text-center" id="sheetTable" style="font-size: 0.88rem;">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="text-start ps-3">Brand &amp; Model</th>
+                                            <th>Storage</th>
+                                            <th class="table-light">Day 17</th>
+                                            <th class="table-light">Day 18</th>
+                                            <th class="table-light">Day 19</th>
+                                            <th class="table-light">Day 20</th>
+                                            <th class="table-light">Day 21</th>
+                                            <th class="table-primary fw-bold text-primary">Day 22 (Current Stock)</th>
+                                            <th class="text-end">Selling Price</th>
+                                            <th>Status</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <?php foreach ($daily_sheet as $s): ?>
+                                            <tr class="sheet-row" data-name="<?= strtolower(htmlspecialchars($s['brand'] . ' ' . $s['model_name'] . ' ' . $s['storage_capacity'])) ?>">
+                                                <td class="text-start ps-3">
+                                                    <div class="fw-bold"><?= htmlspecialchars($s['model_name']) ?></div>
+                                                    <small class="badge bg-light text-dark border"><?= htmlspecialchars($s['brand']) ?></small>
+                                                </td>
+                                                <td><span class="badge bg-light text-secondary border"><?= htmlspecialchars($s['storage_capacity']) ?></span></td>
+                                                <td><?= $s['day_17'] > 0 ? $s['day_17'] : '<span class="text-muted">-</span>' ?></td>
+                                                <td><?= $s['day_18'] > 0 ? $s['day_18'] : '<span class="text-muted">-</span>' ?></td>
+                                                <td><?= $s['day_19'] > 0 ? $s['day_19'] : '<span class="text-muted">-</span>' ?></td>
+                                                <td><?= $s['day_20'] > 0 ? $s['day_20'] : '<span class="text-muted">-</span>' ?></td>
+                                                <td><?= $s['day_21'] > 0 ? $s['day_21'] : '<span class="text-muted">-</span>' ?></td>
+                                                <td class="table-primary fw-bold">
+                                                    <?php if ($s['day_22'] > 0): ?>
+                                                        <span class="badge bg-success fs-6 px-2"><?= $s['day_22'] ?></span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-secondary">0</span>
+                                                    <?php endif; ?>
+                                                </td>
+                                                <td class="text-end fw-bold text-dark"><?= format_currency($s['selling_price']) ?></td>
+                                                <td>
+                                                    <?php if ($s['day_22'] > 0): ?>
+                                                        <span class="badge bg-success-subtle text-success border border-success-subtle">In Stock</span>
+                                                    <?php else: ?>
+                                                        <span class="badge bg-danger-subtle text-danger border border-danger-subtle">Out of Stock</span>
+                                                    <?php endif; ?>
                                                 </td>
                                             </tr>
                                         <?php endforeach; ?>
@@ -655,6 +755,14 @@ function resetAccFilter() {
     document.getElementById('accSearchInput').value = '';
     document.querySelectorAll('.acc-row').forEach(row => {
         row.style.display = '';
+    });
+}
+
+function filterSheetRows() {
+    let q = (document.getElementById('sheetSearchInput').value || '').toLowerCase();
+    document.querySelectorAll('.sheet-row').forEach(row => {
+        let text = row.dataset.name || '';
+        row.style.display = text.includes(q) ? '' : 'none';
     });
 }
 

@@ -268,6 +268,7 @@ require_once __DIR__ . '/../includes/header.php';
                                             <th>Payment</th>
                                             <th class="text-end">Total</th>
                                             <th>Date</th>
+                                            <th class="text-center" style="width: 80px;">Action</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -279,11 +280,16 @@ require_once __DIR__ . '/../includes/header.php';
                                                     <td><span class="badge bg-secondary text-uppercase" style="font-size:0.68rem;"><?= $sale['payment_method'] ?></span></td>
                                                     <td class="text-end fw-bold"><?= format_currency($sale['total_amount']) ?></td>
                                                     <td class="text-muted small"><?= date('M d, H:i', strtotime($sale['created_at'])) ?></td>
+                                                    <td class="text-center">
+                                                        <a href="<?= BASE_URL ?>print_receipt.php?invoice=<?= urlencode($sale['invoice_no']) ?>&mode=thermal" target="_blank" class="btn btn-outline-dark btn-sm p-1 px-2" title="Print Receipt">
+                                                            <i class="fa-solid fa-receipt"></i>
+                                                        </a>
+                                                    </td>
                                                 </tr>
                                             <?php endforeach; ?>
                                         <?php else: ?>
                                             <tr>
-                                                <td colspan="5" class="text-center py-4 text-muted">No sales records yet today.</td>
+                                                <td colspan="6" class="text-center py-4 text-muted">No sales records yet today.</td>
                                             </tr>
                                         <?php endif; ?>
                                     </tbody>

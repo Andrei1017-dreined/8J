@@ -55,9 +55,9 @@ if (!$buyout) {
         <div class="contract-box">
             <div class="header text-center" style="text-align: center;">
                 <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 6px;" alt="8J Logo">
-                <div class="title">8J CELLPHONE ACCESSORIES</div>
-                <div class="sub">Tanauan City, Batangas • Official Electronic Buyout Certificate</div>
-                <div class="doc-title">DEED OF SALE & ANTI-FENCING LAW DECLARATION</div>
+                <div class="title">8J CELLPHONE &amp; ACCESSORIES</div>
+                <div class="sub">2nd Floor, Victory Mall Tanauan, Stall #S1, Tanauan City, Batangas • Tel: 0909-9833-981 / 0917-123-4567</div>
+                <div class="doc-title">DEED OF SALE &amp; ANTI-FENCING LAW DECLARATION</div>
                 <div style="font-size: 11px; color: #71717a; margin-top: 3px;">In compliance with Presidential Decree No. 1612 (Anti-Fencing Law of 1979)</div>
             </div>
 
@@ -93,7 +93,7 @@ if (!$buyout) {
 
             <div class="legal-declaration">
                 <strong>SWORN CERTIFICATION OF LAWFUL OWNERSHIP:</strong><br>
-                I, the undersigned Seller, hereby declare and certify under penalty of law that I am the absolute legal and rightful owner of the mobile phone described above. I certify that this device is free from any liens, encumbrances, or cloud on title, and was <strong>NOT</strong> obtained through theft, robbery, fencing, or any unlawful means. By signing below, I voluntarily transfer full ownership, possession, and rights of this unit to <strong>8J Cellphone Accessories</strong> for the agreed monetary consideration.
+                I, the undersigned Seller, hereby declare and certify under penalty of law that I am the absolute legal and rightful owner of the mobile phone described above. I certify that this device is free from any liens, encumbrances, or cloud on title, and was <strong>NOT</strong> obtained through theft, robbery, fencing, or any unlawful means. By signing below, I voluntarily transfer full ownership, possession, and rights of this unit to <strong>8J Cellphone &amp; Accessories</strong> for the agreed monetary consideration.
             </div>
 
             <div class="signatures">
@@ -103,7 +103,7 @@ if (!$buyout) {
                 </div>
                 <div class="sign-col">
                     <div class="sign-line">Authorized Purchasing Staff</div>
-                    <small><?= htmlspecialchars($buyout['staff_name'] ?? 'Staff') ?> (8J Cellphone Accessories)</small>
+                    <small><?= htmlspecialchars($buyout['staff_name'] ?? 'Staff') ?> (8J Cellphone &amp; Accessories)</small>
                 </div>
             </div>
         </div>

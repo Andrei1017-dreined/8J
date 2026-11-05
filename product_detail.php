@@ -52,6 +52,8 @@ require_once __DIR__ . '/includes/header.php';
 // Load deep specifications
 $specs = get_product_full_specs($item, $type);
 $reviews = get_product_verified_reviews($item_name);
+$has_3d = has_online_3d_model($item_name, $item['brand'] ?? '');
+$bento_specs = get_quick_bento_specs($item, $specs);
 
 // Related items query
 $related_items = [];
@@ -76,327 +78,225 @@ if (!empty($specs['gallery'][0]) && file_exists(__DIR__ . '/assets/img/products/
 $detail_ad_vid = get_product_ad_video($item_name, $item['brand'] ?? '');
 ?>
 
-<div class="container py-4">
-    <!-- Breadcrumb Navigation -->
-    <nav aria-label="breadcrumb" class="mb-4">
+<?php
+/* ---- Premium product hero (generated block) ---- */
+$gallery_imgs = [];
+foreach (($specs['gallery'] ?? []) as $gImg) {
+    if (file_exists(__DIR__ . '/assets/img/products/' . $gImg)) {
+        $gallery_imgs[] = BASE_URL . 'assets/img/products/' . $gImg;
+    }
+}
+if (empty($gallery_imgs)) { $gallery_imgs[] = $main_image; }
+$is_handset = ($type === 'unit') || stripos($sku, 'PHN-') === 0;
+$brand_label = $item['brand'] ?? '8J';
+$condition_label = $type === 'unit' ? ($item['unit_condition'] ?? 'Certified') : ($is_handset ? 'Brand New' : 'Genuine');
+?>
+<style>
+.pd-wrap{max-width:1240px}
+.pd-shell{background:#fff;border-radius:32px;padding:clamp(18px,3vw,44px);box-shadow:0 30px 80px -40px rgba(15,23,42,.25)}
+.pd-stage{position:relative;aspect-ratio:1/1;max-height:600px;width:100%;border-radius:28px;background:radial-gradient(120% 90% at 50% 30%,#ffffff 0%,#f5f5f7 70%,#ececf0 100%);overflow:hidden;display:flex;align-items:center;justify-content:center}
+.pd-stage img.pd-main{max-width:82%;max-height:82%;object-fit:contain;transition:opacity .35s ease,transform .6s cubic-bezier(.16,1,.3,1);filter:drop-shadow(0 30px 40px rgba(15,23,42,.18));mix-blend-mode:multiply}
+.pd-stage:hover img.pd-main{transform:scale(1.04)}
+.pd-nav{position:absolute;top:50%;transform:translateY(-50%);width:44px;height:44px;border-radius:50%;border:0;background:rgba(255,255,255,.85);backdrop-filter:blur(8px);box-shadow:0 6px 20px rgba(15,23,42,.12);display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .25s;z-index:6;color:#111}
+.pd-stage:hover .pd-nav{opacity:1}
+.pd-nav.prev{left:16px}.pd-nav.next{right:16px}
+.pd-count{position:absolute;bottom:16px;right:18px;font-size:.72rem;font-weight:600;color:#6b7280;background:rgba(255,255,255,.8);padding:4px 10px;border-radius:999px;z-index:6}
+.pd-layer{position:absolute;inset:0;z-index:5;display:none;background:#f5f5f7}
+.pd-layer.active{display:block}
+.pd-layer video{width:100%;height:100%;object-fit:cover;background:#000}
+.pd-close-layer{position:absolute;top:14px;right:14px;z-index:8;border:0;border-radius:999px;background:rgba(17,17,17,.75);color:#fff;font-size:.75rem;font-weight:600;padding:6px 14px}
+.pd-rail{display:flex;gap:10px;overflow-x:auto;padding:14px 2px 4px;scrollbar-width:none}
+.pd-rail::-webkit-scrollbar{display:none}
+.pd-thumb{flex:0 0 74px;height:74px;border-radius:16px;border:2px solid transparent;background:#f5f5f7;padding:6px;cursor:pointer;transition:border-color .2s,transform .2s;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:2px;font-size:.66rem;font-weight:700;color:#374151}
+.pd-thumb img{width:100%;height:100%;object-fit:contain;mix-blend-mode:multiply}
+.pd-thumb:hover{transform:translateY(-2px)}
+.pd-thumb.active{border-color:#111}
+.pd-thumb.special{background:#111;color:#fff}
+.pd-thumb.special i{font-size:1.1rem}
+.pd-eyebrow{font-size:.78rem;font-weight:700;letter-spacing:.14em;text-transform:uppercase;color:#be185d}
+.pd-title{font-size:clamp(1.8rem,3.2vw,2.7rem);font-weight:800;letter-spacing:-.03em;line-height:1.08;color:#0b0b0f}
+.pd-tagline{color:#6b7280;font-size:1.02rem;line-height:1.55}
+.pd-price{font-size:clamp(2rem,3.4vw,2.6rem);font-weight:800;letter-spacing:-.03em;color:#0b0b0f}
+.pd-chip{display:inline-flex;align-items:center;gap:6px;padding:7px 14px;border-radius:999px;background:#f5f5f7;font-size:.8rem;font-weight:600;color:#1f2937}
+.pd-chip.ok{background:#ecfdf5;color:#047857}
+.pd-btn-primary{background:#0b0b0f;color:#fff;border:0;border-radius:999px;padding:16px 26px;font-weight:700;width:100%;transition:transform .2s,background .2s}
+.pd-btn-primary:hover{background:#be185d;color:#fff;transform:translateY(-1px)}
+.pd-btn-ghost{background:#fff;color:#0b0b0f;border:1.5px solid #e5e7eb;border-radius:999px;padding:15px 26px;font-weight:700;width:100%;transition:border-color .2s}
+.pd-btn-ghost:hover{border-color:#0b0b0f}
+.pd-qty{display:inline-flex;align-items:center;border:1.5px solid #e5e7eb;border-radius:999px;overflow:hidden}
+.pd-qty button{border:0;background:transparent;width:42px;height:46px;font-size:1rem}
+.pd-qty input{width:40px;border:0;text-align:center;font-weight:700;background:transparent}
+.pd-spec-tile{background:#f5f5f7;border-radius:20px;padding:18px;height:100%}
+.pd-spec-tile i{font-size:1.15rem;color:#be185d}
+.pd-spec-tile .lbl{font-size:.68rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:#9ca3af;margin-top:10px}
+.pd-spec-tile .val{font-size:.9rem;font-weight:700;color:#111;line-height:1.35}
+.pd-trust{display:flex;gap:22px;flex-wrap:wrap;font-size:.8rem;color:#4b5563}
+.pd-trust i{color:#111;margin-right:6px}
+.pd-hl li{padding:9px 0;border-bottom:1px solid #f1f1f4;font-size:.9rem;color:#374151;display:flex;gap:10px}
+.pd-hl li:last-child{border-bottom:0}
+.pd-hl li i{color:#be185d;margin-top:4px;font-size:.7rem}
+@media (max-width:991px){.pd-stage{aspect-ratio:4/3.4}}
+</style>
+
+<div class="container pd-wrap py-4">
+    <nav aria-label="breadcrumb" class="mb-3">
         <ol class="breadcrumb mb-0 bg-transparent p-0 small">
-            <li class="breadcrumb-item"><a href="<?= BASE_URL ?>" class="text-decoration-none text-muted"><i class="fa-solid fa-house me-1"></i> Home</a></li>
-            <li class="breadcrumb-item"><a href="<?= BASE_URL ?>catalog.php<?= $type === 'unit' ? '?type=units' : '' ?>" class="text-decoration-none text-muted">Catalog</a></li>
-            <li class="breadcrumb-item"><a href="<?= BASE_URL ?>catalog.php<?= $type === 'unit' ? '?type=units' : '?category=' . ($item['category_id'] ?? 0) ?>" class="text-decoration-none text-muted"><?= htmlspecialchars($category_name) ?></a></li>
+            <li class="breadcrumb-item"><a href="<?= BASE_URL ?>" class="text-decoration-none text-muted">Home</a></li>
+            <li class="breadcrumb-item"><a href="<?= BASE_URL ?>catalog.php<?= $is_handset ? '?type=units' : '' ?>" class="text-decoration-none text-muted"><?= $is_handset ? 'Phones & Tablets' : 'Accessories' ?></a></li>
             <li class="breadcrumb-item active text-dark fw-semibold" aria-current="page"><?= htmlspecialchars($item_name) ?></li>
         </ol>
     </nav>
 
-    <!-- Main Product Showcase Card -->
-    <div class="card card-custom p-4 p-md-5 mb-5 border-0 shadow-sm bg-white rounded-4 overflow-hidden">
-        <div class="row g-5 align-items-start">
-            
-            <!-- Left Column: Interactive Product Gallery -->
-            <div class="col-lg-6">
-                <div class="position-sticky" style="top: 90px;">
-                    <!-- Badges Header Bar (Cleanly above image, prevents any overlap) -->
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <span class="badge bg-dark text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                            <i class="fa-solid fa-circle-check text-success me-1"></i> 100% Genuine 8J Stock
-                        </span>
-                        <?php if ($type === 'unit'): ?>
-                            <span class="badge bg-success text-white rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                                <i class="fa-solid fa-shield-halved me-1"></i> <?= htmlspecialchars($item['unit_condition'] ?? 'Certified Grade A') ?>
-                            </span>
+    <div class="pd-shell mb-5">
+        <div class="row g-4 g-lg-5 align-items-start">
+            <!-- Gallery -->
+            <div class="col-lg-7">
+                <div class="position-sticky" style="top:90px">
+                    <div class="pd-stage" id="pdStage">
+                        <img id="mainProductView" class="pd-main" src="<?= htmlspecialchars($gallery_imgs[0]) ?>" alt="<?= htmlspecialchars($item_name) ?>">
+                        <?php if (count($gallery_imgs) > 1): ?>
+                            <button type="button" class="pd-nav prev" onclick="pdStep(-1)" aria-label="Previous"><i class="fa-solid fa-chevron-left"></i></button>
+                            <button type="button" class="pd-nav next" onclick="pdStep(1)" aria-label="Next"><i class="fa-solid fa-chevron-right"></i></button>
+                            <span class="pd-count" id="pdCount">1 / <?= count($gallery_imgs) ?></span>
+                        <?php endif; ?>
+
+                        <?php if ($has_3d): ?>
+                            <div class="pd-layer" id="mainProduct3DWrapper">
+                                <div id="mainProduct3DCanvas" style="position:absolute;inset:0;overflow:hidden"></div>
+                                <button type="button" class="pd-close-layer" onclick="pdShowPhoto(pdIndex)"><i class="fa-solid fa-xmark me-1"></i>Close 3D</button>
+                            </div>
                         <?php else: ?>
-                            <span class="badge bg-light text-dark border rounded-pill px-3 py-2 shadow-xs fw-semibold" style="font-size: 0.75rem;">
-                                <i class="fa-solid fa-truck-fast me-1"></i> Tanauan In-Store Pick-Up
-                            </span>
-                        <?php endif; ?>
-                    </div>
-
-                    <!-- Main Large Image, Interactive 360° 3D Studio & Outsourced Commercial Video Container -->
-                    <div class="product-gallery-main p-3 rounded-4 d-flex align-items-center justify-content-center border position-relative overflow-hidden"
-                         style="height: 430px; background: #ffffff;">
-                        <!-- Active Image with Smooth Zoom Preview -->
-                        <img id="mainProductView" src="<?= $main_image ?>" 
-                             alt="<?= htmlspecialchars($item_name) ?>" 
-                             class="img-fluid rounded-3" 
-                             style="max-height: 380px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 10px 24px rgba(0,0,0,0.08)); transition: transform 0.3s ease, opacity 0.2s ease;">
-
-                        <!-- Interactive 360° 3D All-Angles WebGL Studio -->
-                        <div id="mainProduct3DWrapper"
-                             class="d-none studio-3d-viewport rounded-4"
-                             style="position: absolute; inset: 0; width: 100%; height: 100%; background: radial-gradient(circle at 50% 42%, #ffffff 0%, #fff0f6 65%, #fce7f3 100%); z-index: 4;">
-                            <!-- Top-Left Interactive Hint Pill -->
-                            <div class="position-absolute top-0 start-0 m-3 px-3 py-1 rounded-pill bg-white border shadow-xs d-flex align-items-center gap-2"
-                                 style="z-index: 6; font-size: 0.72rem; font-weight: 700; color: #2b1120; pointer-events: none;">
-                                <i class="fa-solid fa-arrows-up-down-left-right text-danger"></i>
-                                <span>Drag 360° All Angles • Scroll to Zoom</span>
-                            </div>
-                            <!-- Top-Right Spin & Wireframe Controls -->
-                            <div class="position-absolute top-0 end-0 m-3 d-flex gap-1" style="z-index: 6;">
-                                <button type="button" id="btn3DAutoSpin" onclick="toggleDetail3DSpin()"
-                                        class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold shadow-xs"
-                                        style="font-size: 0.7rem;">
-                                    <i class="fa-solid fa-Sync fa-spin text-danger me-1"></i>Auto-Spin
-                                </button>
-                                <button type="button" id="btn3DWireframe" onclick="toggleDetail3DWireframe()"
-                                        class="btn btn-sm btn-light border rounded-pill px-2.5 py-1 fw-bold shadow-xs"
-                                        style="font-size: 0.7rem;">
-                                    <i class="fa-solid fa-cube me-1"></i>Wireframe
-                                </button>
-                            </div>
-                            <!-- WebGL Canvas Target -->
-                            <div id="mainProduct3DCanvas" style="width: 100%; height: 100%;"></div>
-                        </div>
-
-                        <!-- Outsourced HD Commercial Video Player -->
-                        <video id="mainProductAdVideo"
-                               muted loop playsinline preload="none"
-                               data-ad-src="<?= htmlspecialchars($detail_ad_vid['hd']) ?>"
-                               class="d-none rounded-4"
-                               style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; background: #09090b; z-index: 3;"></video>
-
-                        <!-- Interactive 360° 3D View Toggle Pill (Bottom Left) -->
-                        <button type="button"
-                                id="toggleDetail3DBtn"
-                                onclick="toggleDetail3DView()"
-                                class="btn btn-dark btn-sm rounded-pill position-absolute bottom-0 start-0 m-3 px-3 py-1.5 fw-bold shadow"
-                                style="z-index: 5; font-size: 0.78rem; border: 1px solid rgba(244, 114, 182, 0.5);">
-                            <i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View
-                        </button>
-
-                        <!-- Watch Official Commercial Ad Pill (Bottom Right) -->
-                        <button type="button"
-                                id="toggleDetailAdBtn"
-                                onclick="toggleDetailCommercialAd()"
-                                class="btn btn-dark btn-sm rounded-pill position-absolute bottom-0 end-0 m-3 px-3 py-1.5 fw-bold shadow"
-                                style="z-index: 5; font-size: 0.78rem; border: 1px solid rgba(244, 114, 182, 0.5);">
-                            <i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad
-                        </button>
-                    </div>
-
-                    <!-- 360° 3D Quick Camera Angles Bar (Click any angle to inspect in 3D) -->
-                    <div class="d-flex align-items-center flex-wrap gap-1.5 mt-2 p-2 rounded-3 border bg-light" style="border-color: #fce7f3 !important;">
-                        <span class="badge bg-dark text-white rounded-pill px-2.5 py-1 me-1" style="font-size: 0.68rem;">
-                            <i class="fa-solid fa-compass-drafting text-warning me-1"></i> 3D Angles:
-                        </span>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0.14, -0.52, 5.1, this)">
-                            <i class="fa-solid fa-cube text-danger me-1"></i>3D Iso
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, 0, 4.8, this)">
-                            Front
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, Math.PI, 4.8, this)">
-                            Back / Cameras
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, Math.PI / 2, 4.6, this)">
-                            Left Side
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(0, -Math.PI / 2, 4.6, this)">
-                            Right Side
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(-Math.PI / 2, 0, 4.4, this)">
-                            Bottom Port
-                        </button>
-                        <button type="button" class="btn btn-sm btn-white bg-white border rounded-pill px-2.5 py-0.5 fw-semibold detail-angle-btn" style="font-size: 0.72rem;" onclick="inspectProduct3DAngle(Math.PI / 2, 0, 4.4, this)">
-                            Top Edge
-                        </button>
-                    </div>
-
-                    <!-- Gallery Thumbnails Strip -->
-                    <div class="d-flex align-items-center gap-2 mt-2 overflow-auto py-2">
-                        <?php if (!empty($specs['gallery'])): ?>
-                            <?php foreach ($specs['gallery'] as $idx => $gImg): 
-                                $gPath = BASE_URL . 'assets/img/products/' . $gImg;
-                                if (!file_exists(__DIR__ . '/assets/img/products/' . $gImg)) continue;
-                            ?>
-                                <button type="button" 
-                                        class="gallery-thumb-btn btn p-1 rounded-3 border <?= $idx === 0 ? 'border-dark shadow-sm' : 'border-light-subtle' ?>" 
-                                        style="width: 72px; height: 72px; background: #fafafa;"
-                                        onclick="switchGalleryImage('<?= $gPath ?>', this)">
-                                    <img src="<?= $gPath ?>" alt="Thumbnail" class="w-100 h-100 object-fit-contain rounded-2">
-                                </button>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                        <button type="button"
-                                id="thumb3DTriggerBtn"
-                                class="gallery-thumb-btn btn p-1 rounded-3 border border-light-subtle d-flex flex-column align-items-center justify-content-center text-white"
-                                style="width: 88px; height: 72px; background: linear-gradient(135deg, #0f172a 0%, #db2777 100%); font-size: 0.68rem; font-weight: 700;"
-                                onclick="toggleDetail3DView(true)">
-                            <i class="fa-solid fa-cube text-info fs-5 mb-1"></i>
-                            <span>360° 3D</span>
-                        </button>
-                        <button type="button"
-                                class="gallery-thumb-btn btn p-1 rounded-3 border border-light-subtle d-flex flex-column align-items-center justify-content-center text-white"
-                                style="width: 88px; height: 72px; background: linear-gradient(135deg, #18181b 0%, #4a1534 100%); font-size: 0.68rem; font-weight: 700;"
-                                onclick="toggleDetailCommercialAd(true)">
-                            <i class="fa-solid fa-film text-warning fs-5 mb-1"></i>
-                            <span>Play Ad</span>
-                        </button>
-                    </div>
-
-                    <!-- Store Pick-up Notice Footnote -->
-                    <div class="mt-4 p-3 bg-light rounded-3 border d-flex align-items-center gap-3">
-                        <div class="rounded-circle bg-dark text-white p-2 d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
-                            <i class="fa-solid fa-store fs-5"></i>
-                        </div>
-                        <div class="small">
-                            <strong class="d-block text-dark">Available for Same-Day In-Store Pick-Up</strong>
-                            <span class="text-muted">Tanauan City, Batangas Counter • Reserve online with zero reservation fees</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Right Column: Product Overview, Pricing & Purchasing Actions -->
-            <div class="col-lg-6">
-                <!-- Brand & Sku Header -->
-                <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
-                    <span class="badge bg-light text-dark border px-3 py-1 rounded-pill fw-bold" style="font-size: 0.78rem;">
-                        <?= htmlspecialchars($item['brand'] ?? '8J Certified') ?>
-                    </span>
-                    <span class="badge bg-secondary-subtle text-secondary border px-3 py-1 rounded-pill small">
-                        <?= htmlspecialchars($category_name) ?>
-                    </span>
-                    <span class="text-muted small ms-auto d-flex align-items-center gap-1" style="font-size: 0.8rem;">
-                        <i class="fa-solid fa-barcode"></i> SKU: <span class="badge bg-light text-dark border font-monospace px-2 py-1"><?= htmlspecialchars($sku) ?></span>
-                    </span>
-                </div>
-
-                <!-- Product Title -->
-                <h1 class="h2 fw-extrabold text-dark mb-2" style="letter-spacing: -0.5px;">
-                    <?= htmlspecialchars($item_name) ?>
-                </h1>
-
-                <!-- Tagline -->
-                <p class="text-secondary mb-3 fw-medium" style="font-size: 1.02rem; line-height: 1.5;">
-                    <?= htmlspecialchars($specs['tagline']) ?>
-                </p>
-
-                <!-- Rating and Reviews Meta -->
-                <div class="d-flex align-items-center gap-3 mb-4 pb-3 border-bottom">
-                    <div class="text-warning small">
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                        <i class="fa-solid fa-star"></i>
-                    </div>
-                    <span class="fw-bold text-dark small">4.9 / 5.0</span>
-                    <span class="text-muted small">•</span>
-                    <a href="#reviewsSection" class="text-decoration-none small text-primary fw-semibold">
-                        <i class="fa-solid fa-comment-dots me-1"></i> 14 Verified Store Reviews
-                    </a>
-                    <span class="text-muted small">•</span>
-                    <span class="badge <?= $stock > 0 ? 'bg-success-subtle text-success border border-success-subtle' : 'bg-danger-subtle text-danger' ?> px-2 py-1 rounded-pill small">
-                        <i class="fa-solid fa-circle-check me-1"></i> <?= $stock > 0 ? ($stock . ' Units In Stock') : 'Out of Stock' ?>
-                    </span>
-                </div>
-
-                <!-- Pricing Block -->
-                <div class="p-4 rounded-4 mb-4" style="background: linear-gradient(135deg, #2d1122 0%, #4a1534 100%); color: #ffffff; border: 1px solid #831843;">
-                    <div class="d-flex justify-content-between align-items-baseline mb-1">
-                        <span class="text-uppercase fw-bold text-white-50" style="font-size: 0.75rem; letter-spacing: 1px;">Standard Retail Price</span>
-                        <span class="badge bg-light text-dark rounded-pill px-2 py-0.5 fw-semibold" style="font-size: 0.7rem;">VAT Inclusive</span>
-                    </div>
-                    <div class="d-flex align-items-baseline gap-3">
-                        <span class="display-5 fw-extrabold text-white" id="liveDisplayPrice">
-                            <?= format_currency($price) ?>
-                        </span>
-                        <?php if ($type !== 'unit'): ?>
-                            <span class="text-white-50 text-decoration-line-through small">
-                                <?= format_currency($price * 1.25) ?>
-                            </span>
-                        <?php endif; ?>
-                    </div>
-                    <p class="mb-0 text-white-50 small mt-2">
-                        <i class="fa-solid fa-shield-halved text-success me-1"></i> Covered by 8J Tanauan official store receipt and replacement guarantee.
-                    </p>
-                </div>
-
-                <!-- Key Feature Highlights Bullets -->
-                <div class="mb-4">
-                    <h6 class="fw-bold text-dark text-uppercase mb-3" style="font-size: 0.78rem; letter-spacing: 0.8px;">
-                        <i class="fa-solid fa-sparkles text-warning me-1"></i> Key Highlights & Features
-                    </h6>
-                    <div class="row g-2">
-                        <?php foreach ($specs['highlights'] as $highlight): ?>
-                            <div class="col-12 d-flex align-items-start gap-2">
-                                <i class="fa-solid fa-circle-check text-dark mt-1 flex-shrink-0"></i>
-                                <span class="text-secondary small fw-medium"><?= htmlspecialchars($highlight) ?></span>
-                            </div>
-                        <?php endforeach; ?>
-                    </div>
-                </div>
-
-                <!-- Purchasing & Cart Actions -->
-                <div class="card p-3 p-md-4 rounded-4 border bg-light mb-4">
-                    <div class="row g-3 align-items-center">
-                        <?php if ($type !== 'unit'): ?>
-                            <div class="col-sm-4">
-                                <label class="form-label small fw-bold text-muted mb-1">Quantity</label>
-                                <div class="input-group">
-                                    <button class="btn btn-outline-dark" type="button" onclick="adjustProductQty(-1)">
-                                        <i class="fa-solid fa-minus"></i>
-                                    </button>
-                                    <input type="text" id="productQtyInput" class="form-control text-center fw-bold bg-white" value="1" readonly>
-                                    <button class="btn btn-outline-dark" type="button" onclick="adjustProductQty(1)">
-                                        <i class="fa-solid fa-plus"></i>
+                            <div class="pd-layer" id="mainProductNo3DWrapper">
+                                <div class="d-flex flex-column align-items-center justify-content-center text-center p-4 w-100 h-100" style="background: radial-gradient(circle at 50% 35%, #ffffff 0%, #f8fafc 65%, #f1f5f9 100%);">
+                                    <div class="position-relative mb-3 d-flex align-items-center justify-content-center" style="width: 88px; height: 88px; border-radius: 24px; background: #ffffff; box-shadow: 0 12px 30px rgba(15,23,42,0.08); border: 1px solid #e2e8f0;">
+                                        <i class="fa-solid fa-cube text-secondary opacity-40 fs-1"></i>
+                                        <span class="badge bg-danger text-white rounded-pill position-absolute bottom-0 translate-middle-y px-2 py-0.5" style="font-size: 0.62rem; font-weight: 800;">
+                                            <i class="fa-solid fa-ban me-1"></i>N/A
+                                        </span>
+                                    </div>
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle rounded-pill px-3 py-1 mb-2 fw-extrabold" style="font-size: 0.72rem; letter-spacing: 0.05em;">
+                                        3D MODEL UNAVAILABLE
+                                    </span>
+                                    <h5 class="fw-extrabold text-dark mb-1" style="max-width: 380px;">No 3D CAD Model Available</h5>
+                                    <p class="text-muted small mb-3" style="max-width: 380px; font-size: 0.82rem; line-height: 1.5;">
+                                        An authentic 3D CAD mesh is not available online for <strong><?= htmlspecialchars($item_name) ?></strong>. Please inspect our high-resolution multi-angle studio gallery below.
+                                    </p>
+                                    <button type="button" onclick="pdShowPhoto(0)" class="btn btn-dark btn-sm rounded-pill px-4 py-2 fw-bold shadow-sm">
+                                        <i class="fa-solid fa-images text-info me-1.5"></i> View Studio Photos
                                     </button>
                                 </div>
+                                <button type="button" class="pd-close-layer" onclick="pdShowPhoto(pdIndex)"><i class="fa-solid fa-xmark me-1"></i>Close</button>
                             </div>
                         <?php endif; ?>
+                        <?php if (!empty($detail_ad_vid)): ?>
+                            <div class="pd-layer" id="pdVideoLayer">
+                                <?php if (($detail_ad_vid['type'] ?? '') === 'youtube'): ?>
+                                    <iframe id="mainProductAdIframe"
+                                            data-src="<?= htmlspecialchars($detail_ad_vid['hd']) ?>"
+                                            src=""
+                                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                                            allowfullscreen
+                                            style="position:absolute;inset:0;width:100%;height:100%;border:0;"></iframe>
+                                <?php else: ?>
+                                    <video id="mainProductAdVideo" muted loop playsinline preload="none" data-ad-src="<?= htmlspecialchars($detail_ad_vid['hd']) ?>"></video>
+                                <?php endif; ?>
+                                <button type="button" class="pd-close-layer" onclick="pdShowPhoto(pdIndex)"><i class="fa-solid fa-xmark me-1"></i>Close</button>
+                            </div>
+                        <?php endif; ?>
+                    </div>
 
-                        <div class="<?= $type !== 'unit' ? 'col-sm-8' : 'col-12' ?>">
-                            <label class="form-label small fw-bold text-muted mb-1 d-none d-sm-block">&nbsp;</label>
-                            <button type="button" 
-                                    class="btn btn-dark w-100 rounded-pill py-2.5 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2 btn-tactile"
-                                    onclick="addProductToPickupCart()">
-                                <i class="fa-solid fa-cart-plus"></i> Add to Pick-Up Cart
+                    <div class="pd-rail" id="pdRail">
+                        <?php foreach ($gallery_imgs as $i => $g): ?>
+                            <button type="button" class="pd-thumb <?= $i === 0 ? 'active' : '' ?>" data-idx="<?= $i ?>" onclick="pdShowPhoto(<?= $i ?>)">
+                                <img src="<?= htmlspecialchars($g) ?>" alt="" loading="lazy">
                             </button>
-                        </div>
-
-                        <div class="col-12">
-                            <button type="button" 
-                                    class="btn btn-outline-dark w-100 rounded-pill py-2 fw-semibold d-flex align-items-center justify-content-center gap-2"
-                                    onclick="reserveDirectlyNow()">
-                                <i class="fa-solid fa-bolt"></i> Reserve for Instant Pick-Up Today <i class="fa-solid fa-arrow-right ms-1"></i>
-                            </button>
-                        </div>
+                        <?php endforeach; ?>
+                        <?php if ($has_3d): ?>
+                            <button type="button" class="pd-thumb special" id="pdThumb3D" onclick="pdShow3D()"><i class="fa-solid fa-cube"></i>3D</button>
+                        <?php else: ?>
+                            <button type="button" class="pd-thumb special na" id="pdThumb3D" onclick="pdShowNo3D()" title="3D Model Unavailable"><i class="fa-solid fa-cube opacity-40"></i><span style="font-size:0.60rem;color:#ef4444;font-weight:800;letter-spacing:0.04em;">3D N/A</span></button>
+                        <?php endif; ?>
+                        <?php if (!empty($detail_ad_vid)): ?>
+                            <button type="button" class="pd-thumb special" id="pdThumbVid" onclick="pdShowVideo()"><i class="fa-solid fa-play"></i>Film</button>
+                        <?php endif; ?>
                     </div>
                 </div>
+            </div>
 
-                <!-- Trust Badges & Guarantee Grid -->
-                <div class="row g-3 text-dark small border-top pt-3">
-                    <div class="col-6 d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-stopwatch text-dark fs-5"></i>
-                        <div>
-                            <strong class="d-block" style="font-size: 0.8rem;">1-Hour Pick-Up</strong>
-                            <span class="text-muted" style="font-size: 0.72rem;">Ready at Tanauan store</span>
-                        </div>
-                    </div>
-                    <div class="col-6 d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-rotate-left text-dark fs-5"></i>
-                        <div>
-                            <strong class="d-block" style="font-size: 0.8rem;">7-Day Replacement</strong>
-                            <span class="text-muted" style="font-size: 0.72rem;">Direct factory defect swap</span>
-                        </div>
-                    </div>
-                    <div class="col-6 d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-receipt text-dark fs-5"></i>
-                        <div>
-                            <strong class="d-block" style="font-size: 0.8rem;">Official Claim Slip</strong>
-                            <span class="text-muted" style="font-size: 0.72rem;">Secure PIN verification</span>
-                        </div>
-                    </div>
-                    <div class="col-6 d-flex align-items-center gap-2">
-                        <i class="fa-solid fa-award text-dark fs-5"></i>
-                        <div>
-                            <strong class="d-block" style="font-size: 0.8rem;">Verified Authentic</strong>
-                            <span class="text-muted" style="font-size: 0.72rem;">Tested by 8J technicians</span>
-                        </div>
-                    </div>
+            <!-- Buy box -->
+            <div class="col-lg-5">
+                <div class="pd-eyebrow mb-2"><?= htmlspecialchars($brand_label) ?> · <?= htmlspecialchars($condition_label) ?></div>
+                <h1 class="pd-title mb-3"><?= htmlspecialchars($item_name) ?></h1>
+                <p class="pd-tagline mb-3"><?= htmlspecialchars($specs['tagline']) ?></p>
+
+                <div class="d-flex align-items-center gap-2 mb-4 small">
+                    <span class="text-warning"><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i><i class="fa-solid fa-star"></i></span>
+                    <a href="#reviewsSection" class="text-decoration-none text-muted">4.9 · 14 reviews</a>
                 </div>
 
+                <div class="pd-price mb-1"><?= format_currency($price) ?></div>
+                <div class="text-muted small mb-4">VAT inclusive · Pay at the counter · No reservation fee</div>
+
+                <div class="d-flex flex-wrap gap-2 mb-4">
+                    <?php if ($type === 'unit' && !empty($item['storage_capacity'])): ?>
+                        <span class="pd-chip"><i class="fa-solid fa-hard-drive"></i><?= htmlspecialchars($item['storage_capacity']) ?></span>
+                    <?php endif; ?>
+                    <?php if (!empty($item['color'])): ?>
+                        <span class="pd-chip"><i class="fa-solid fa-palette"></i><?= htmlspecialchars($item['color']) ?></span>
+                    <?php endif; ?>
+                    <?php if ($type === 'unit' && !empty($item['battery_health'])): ?>
+                        <span class="pd-chip"><i class="fa-solid fa-battery-three-quarters"></i><?= (int)$item['battery_health'] ?>% battery</span>
+                    <?php endif; ?>
+                    <span class="pd-chip <?= $stock > 0 ? 'ok' : '' ?>"><i class="fa-solid fa-circle" style="font-size:.5rem"></i><?= $stock > 0 ? 'In stock · Ready today' : 'Out of stock' ?></span>
+                    <?php if ($has_3d): ?>
+                        <span class="pd-chip" style="background: #f0fdf4; color: #166534; border: 1px solid #bbf7d0;"><i class="fa-solid fa-cube text-success"></i>3D Model Available</span>
+                    <?php else: ?>
+                        <span class="pd-chip" style="background: #f8fafc; color: #64748b; border: 1px solid #e2e8f0;"><i class="fa-solid fa-cube opacity-40"></i>3D Unavailable</span>
+                    <?php endif; ?>
+                </div>
+
+                <div class="d-flex gap-2 mb-2 align-items-stretch">
+                    <?php if ($type !== 'unit'): ?>
+                        <div class="pd-qty">
+                            <button type="button" onclick="adjustProductQty(-1)">−</button>
+                            <input type="text" id="productQtyInput" value="1" readonly>
+                            <button type="button" onclick="adjustProductQty(1)">+</button>
+                        </div>
+                    <?php endif; ?>
+                    <button type="button" class="pd-btn-primary" onclick="reserveDirectlyNow()" <?= $stock > 0 ? '' : 'disabled' ?>>Reserve for pick-up</button>
+                </div>
+                <button type="button" class="pd-btn-ghost mb-4" onclick="addProductToPickupCart()" <?= $stock > 0 ? '' : 'disabled' ?>>
+                    <i class="fa-solid fa-bag-shopping me-2"></i>Add to cart
+                </button>
+
+                <div class="pd-trust mb-4 pb-4 border-bottom">
+                    <span><i class="fa-solid fa-store"></i>Victory Mall Tanauan</span>
+                    <span><i class="fa-solid fa-rotate-left"></i>7-day replacement</span>
+                    <span><i class="fa-solid fa-shield-halved"></i>Official warranty</span>
+                </div>
+
+                <h6 class="fw-bold mb-2" style="font-size:.95rem">Highlights</h6>
+                <ul class="list-unstyled pd-hl mb-0">
+                    <?php foreach (array_slice($specs['highlights'], 0, 5) as $hl): ?>
+                        <li><i class="fa-solid fa-circle"></i><span><?= htmlspecialchars($hl) ?></span></li>
+                    <?php endforeach; ?>
+                </ul>
             </div>
         </div>
+
+        <?php if (!empty($bento_specs)): ?>
+            <div class="row g-3 mt-4 pt-2">
+                <?php foreach ($bento_specs as $bs): ?>
+                    <div class="col-6 col-lg-3">
+                        <div class="pd-spec-tile">
+                            <i class="fa-solid <?= htmlspecialchars($bs['icon']) ?>"></i>
+                            <div class="lbl"><?= htmlspecialchars(ucwords(strtolower($bs['label']))) ?></div>
+                            <div class="val"><?= htmlspecialchars($bs['value']) ?></div>
+                        </div>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+        <?php endif; ?>
     </div>
 
     <!-- In-Depth Technical Specifications & Reviews Tabs -->
@@ -649,192 +549,102 @@ $detail_ad_vid = get_product_ad_video($item_name, $item['brand'] ?? '');
 </div>
 
 <script>
+const pdImages = <?= json_encode(array_values($gallery_imgs)) ?>;
+let pdIndex = 0;
 let detail3DStudio = null;
-let currentDetailImageSrc = <?= json_encode($main_image) ?>;
 const detailProductConfig = {
     name: <?= json_encode($item_name) ?>,
-    brand: <?= json_encode($item['brand'] ?? 'Apple') ?>,
+    brand: <?= json_encode($item['brand'] ?? '') ?>,
     category: <?= json_encode($category_name) ?>,
     color: <?= json_encode($item['color'] ?? '') ?>,
     type: <?= json_encode($type) ?>,
-    image: currentDetailImageSrc
+    image: pdImages[0]
 };
 
-function ensureDetail3DInitialized() {
-    const canvasContainer = document.getElementById('mainProduct3DCanvas');
-    if (!canvasContainer || typeof window.Product3DStudio !== 'function') return null;
-    if (!detail3DStudio) {
-        detail3DStudio = new window.Product3DStudio(canvasContainer, detailProductConfig);
-    }
-    return detail3DStudio;
+function pdHideLayers() {
+    document.querySelectorAll('#pdStage .pd-layer').forEach(l => l.classList.remove('active'));
+    const v = document.getElementById('mainProductAdVideo');
+    if (v) { try { v.pause(); } catch (e) {} }
+    const iframe = document.getElementById('mainProductAdIframe');
+    if (iframe) { iframe.src = ''; }
+    document.querySelectorAll('#pdRail .pd-thumb').forEach(t => t.classList.remove('active'));
 }
 
-// Toggle Interactive 360° 3D All-Angles View
-function toggleDetail3DView(forceOpen = false) {
-    const wrapper3D = document.getElementById('mainProduct3DWrapper');
-    const vidEl = document.getElementById('mainProductAdVideo');
-    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
-    const toggleAdBtn = document.getElementById('toggleDetailAdBtn');
-    const thumb3DBtn = document.getElementById('thumb3DTriggerBtn');
-    if (!wrapper3D || !toggle3DBtn) return;
+function pdShowPhoto(i) {
+    if (!pdImages.length) return;
+    pdIndex = (i + pdImages.length) % pdImages.length;
+    pdHideLayers();
+    const img = document.getElementById('mainProductView');
+    img.style.opacity = '0';
+    setTimeout(() => { img.src = pdImages[pdIndex]; img.style.opacity = '1'; }, 160);
+    const t = document.querySelector('#pdRail .pd-thumb[data-idx="' + pdIndex + '"]');
+    if (t) { t.classList.add('active'); t.scrollIntoView({ behavior: 'smooth', inline: 'nearest', block: 'nearest' }); }
+    const c = document.getElementById('pdCount');
+    if (c) c.textContent = (pdIndex + 1) + ' / ' + pdImages.length;
+}
+function pdStep(d) { pdShowPhoto(pdIndex + d); }
 
-    const shouldOpen = forceOpen || wrapper3D.classList.contains('d-none');
+function pdShow3D() {
+    const layer = document.getElementById('mainProduct3DWrapper');
+    if (!layer || typeof window.Product3DStudio !== 'function') return;
+    pdHideLayers();
+    layer.classList.add('active');
+    document.getElementById('pdThumb3D')?.classList.add('active');
+    if (!detail3DStudio) detail3DStudio = new window.Product3DStudio(document.getElementById('mainProduct3DCanvas'), detailProductConfig);
+}
 
-    // Stop video ad if playing
-    if (vidEl && !vidEl.classList.contains('d-none')) {
-        try { vidEl.pause(); } catch (e) {}
-        vidEl.classList.add('d-none');
+function pdShowNo3D() {
+    const layer = document.getElementById('mainProductNo3DWrapper');
+    if (!layer) return;
+    pdHideLayers();
+    layer.classList.add('active');
+    document.getElementById('pdThumb3D')?.classList.add('active');
+}
+
+function pdShowVideo() {
+    const layer = document.getElementById('pdVideoLayer');
+    if (!layer) return;
+    pdHideLayers();
+    layer.classList.add('active');
+    document.getElementById('pdThumbVid')?.classList.add('active');
+
+    const v = document.getElementById('mainProductAdVideo');
+    if (v) {
+        if (!v.getAttribute('src') && v.dataset.adSrc) { v.src = v.dataset.adSrc; v.load(); }
+        v.play().catch(() => {});
     }
-    if (toggleAdBtn) {
-        toggleAdBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
-    }
 
-    if (shouldOpen) {
-        wrapper3D.classList.remove('d-none');
-        const studio = ensureDetail3DInitialized();
-        if (studio && studio.resizeHandler) {
-            setTimeout(() => studio.resizeHandler(), 30);
-        }
-        toggle3DBtn.innerHTML = '<i class="fa-solid fa-image text-warning me-1"></i> Back to Studio Photo';
-        if (thumb3DBtn) {
-            thumb3DBtn.classList.remove('border-light-subtle');
-            thumb3DBtn.classList.add('border-dark', 'shadow-sm');
-        }
-    } else {
-        wrapper3D.classList.add('d-none');
-        toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
-        if (thumb3DBtn) {
-            thumb3DBtn.classList.remove('border-dark', 'shadow-sm');
-            thumb3DBtn.classList.add('border-light-subtle');
+    const iframe = document.getElementById('mainProductAdIframe');
+    if (iframe) {
+        if (!iframe.getAttribute('src') && iframe.dataset.src) {
+            iframe.src = iframe.dataset.src;
         }
     }
 }
 
-// Jump to specific 3D camera angle (Front, Back, Left, Right, Bottom Port, Top, Isometric)
-function inspectProduct3DAngle(rotX, rotY, zoom, btnEl) {
-    toggleDetail3DView(true);
-    const studio = ensureDetail3DInitialized();
-    if (studio) {
-        studio.setAngle(rotX, rotY, zoom);
-        const spinBtn = document.getElementById('btn3DAutoSpin');
-        if (spinBtn) {
-            spinBtn.innerHTML = '<i class="fa-solid fa-rotate text-secondary me-1"></i>Auto-Spin: OFF';
-        }
-    }
-    document.querySelectorAll('.detail-angle-btn').forEach(b => {
-        b.classList.remove('btn-dark', 'text-white');
-        b.classList.add('btn-white', 'bg-white');
+// Backwards-compatible aliases
+function toggleDetail3DView(open) { open === false ? pdShowPhoto(pdIndex) : pdShow3D(); }
+function toggleDetailCommercialAd() { pdShowVideo(); }
+function switchGalleryImage(src) { const i = pdImages.indexOf(src); pdShowPhoto(i >= 0 ? i : 0); }
+
+// Keyboard + swipe navigation
+document.addEventListener('keydown', e => {
+    if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName)) return;
+    if (e.key === 'ArrowRight') pdStep(1);
+    if (e.key === 'ArrowLeft') pdStep(-1);
+});
+(function () {
+    const stage = document.getElementById('pdStage');
+    if (!stage) return;
+    let x0 = null;
+    stage.addEventListener('touchstart', e => { x0 = e.touches[0].clientX; }, { passive: true });
+    stage.addEventListener('touchend', e => {
+        if (x0 === null || document.querySelector('#pdStage .pd-layer.active')) return;
+        const dx = e.changedTouches[0].clientX - x0;
+        if (Math.abs(dx) > 40) pdStep(dx < 0 ? 1 : -1);
+        x0 = null;
     });
-    if (btnEl) {
-        btnEl.classList.remove('btn-white', 'bg-white');
-        btnEl.classList.add('btn-dark', 'text-white');
-    }
-}
-
-function toggleDetail3DSpin() {
-    const studio = ensureDetail3DInitialized();
-    const spinBtn = document.getElementById('btn3DAutoSpin');
-    if (!studio || !spinBtn) return;
-    const spinning = studio.toggleAutoRotate();
-    spinBtn.innerHTML = spinning
-        ? '<i class="fa-solid fa-sync fa-spin text-danger me-1"></i>Auto-Spin: ON'
-        : '<i class="fa-solid fa-rotate text-secondary me-1"></i>Auto-Spin: OFF';
-}
-
-function toggleDetail3DWireframe() {
-    const studio = ensureDetail3DInitialized();
-    const wfBtn = document.getElementById('btn3DWireframe');
-    if (!studio || !wfBtn) return;
-    const isWf = studio.setWireframe();
-    wfBtn.classList.toggle('btn-dark', isWf);
-    wfBtn.classList.toggle('text-white', isWf);
-    wfBtn.classList.toggle('btn-light', !isWf);
-}
-
-// Switch main gallery image on thumbnail click (and sync 3D finish color!)
-function switchGalleryImage(imgSrc, btnEl) {
-    currentDetailImageSrc = imgSrc;
-    detailProductConfig.image = imgSrc;
-
-    // Also update 3D model finish color to match clicked thumbnail
-    if (detail3DStudio) {
-        detail3DStudio.rebuildModel({ image: imgSrc, color: imgSrc });
-    }
-
-    const mainView = document.getElementById('mainProductView');
-    const vidEl = document.getElementById('mainProductAdVideo');
-    const wrapper3D = document.getElementById('mainProduct3DWrapper');
-    const toggleAdBtn = document.getElementById('toggleDetailAdBtn');
-    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
-
-    if (vidEl && !vidEl.classList.contains('d-none')) {
-        try { vidEl.pause(); } catch (e) {}
-        vidEl.classList.add('d-none');
-    }
-    if (toggleAdBtn) {
-        toggleAdBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
-    }
-
-    // If user is currently in 3D mode, keep 3D mode open so they see the new color in 3D immediately!
-    // If they click the same thumbnail again, return to Studio Photo.
-    if (wrapper3D && !wrapper3D.classList.contains('d-none')) {
-        if (btnEl && btnEl.dataset.lastClickedIn3D === '1') {
-            btnEl.dataset.lastClickedIn3D = '0';
-            wrapper3D.classList.add('d-none');
-            if (toggle3DBtn) toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
-        } else {
-            document.querySelectorAll('.gallery-thumb-btn').forEach(b => b.dataset.lastClickedIn3D = '0');
-            if (btnEl) btnEl.dataset.lastClickedIn3D = '1';
-        }
-    }
-
-    if (mainView) {
-        mainView.style.opacity = '0.3';
-        setTimeout(() => {
-            mainView.src = imgSrc;
-            mainView.style.opacity = '1';
-        }, 150);
-    }
-
-    document.querySelectorAll('.gallery-thumb-btn').forEach(btn => {
-        btn.classList.remove('border-dark', 'shadow-sm');
-        btn.classList.add('border-light-subtle');
-    });
-    if (btnEl) {
-        btnEl.classList.remove('border-light-subtle');
-        btnEl.classList.add('border-dark', 'shadow-sm');
-    }
-}
-
-// Toggle outsourced HD commercial ad video on Product Detail page
-function toggleDetailCommercialAd(forcePlay = false) {
-    const vidEl = document.getElementById('mainProductAdVideo');
-    const wrapper3D = document.getElementById('mainProduct3DWrapper');
-    const toggleBtn = document.getElementById('toggleDetailAdBtn');
-    const toggle3DBtn = document.getElementById('toggleDetail3DBtn');
-    if (!vidEl || !toggleBtn) return;
-
-    const shouldPlay = forcePlay || vidEl.classList.contains('d-none');
-    if (shouldPlay) {
-        if (wrapper3D && !wrapper3D.classList.contains('d-none')) {
-            wrapper3D.classList.add('d-none');
-            if (toggle3DBtn) toggle3DBtn.innerHTML = '<i class="fa-solid fa-cube text-info me-1"></i> 360° 3D View';
-        }
-        const src = vidEl.dataset.adSrc;
-        if (!vidEl.getAttribute('src') && src) {
-            vidEl.src = src;
-            vidEl.load();
-        }
-        vidEl.classList.remove('d-none');
-        vidEl.play().catch(() => {});
-        toggleBtn.innerHTML = '<i class="fa-solid fa-image text-info me-1"></i> Back to Studio Photo';
-    } else {
-        try { vidEl.pause(); } catch (e) {}
-        vidEl.classList.add('d-none');
-        toggleBtn.innerHTML = '<i class="fa-solid fa-play text-warning me-1"></i> Watch Official Ad';
-    }
-}
-
+})();
 // Adjust quantity
 function adjustProductQty(delta) {
     const input = document.getElementById('productQtyInput');

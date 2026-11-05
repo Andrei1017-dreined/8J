@@ -57,9 +57,9 @@ if (!$tr) {
         <div class="contract-box">
             <div class="header text-center" style="text-align: center;">
                 <img src="<?= BASE_URL ?>assets/img/logo.png" style="width: 48px; height: 48px; object-fit: contain; margin-bottom: 6px;" alt="8J Logo">
-                <div class="title" style="font-weight: 800; font-size: 18px;">8J CELLPHONE ACCESSORIES</div>
-                <div class="sub" style="font-size: 11px; color: #71717a;">Tanauan City, Batangas • Tel: 0917-123-4567</div>
-                <div class="doc-title" style="font-weight: bold; margin-top: 6px; letter-spacing: 0.5px;">SMARTPHONE TRADE-IN & SWAP AGREEMENT</div>
+                <div class="title" style="font-weight: 800; font-size: 18px;">8J CELLPHONE &amp; ACCESSORIES</div>
+                <div class="sub" style="font-size: 11px; color: #71717a;">2nd Floor, Victory Mall Tanauan, Stall #S1, Tanauan City, Batangas • Tel: 0909-9833-981 / 0917-123-4567</div>
+                <div class="doc-title" style="font-weight: bold; margin-top: 6px; letter-spacing: 0.5px;">SMARTPHONE TRADE-IN &amp; SWAP AGREEMENT</div>
             </div>
 
             <div class="meta-grid">
@@ -109,7 +109,7 @@ if (!$tr) {
             </div>
 
             <div style="font-size: 11px; color: #64748b; line-height: 1.4; margin-top: 15px;">
-                <strong>Trade Conditions:</strong> Both parties acknowledge the condition of the exchanged units. The customer confirms ownership of the traded-in phone and releases all claims. The store provides a 7-day replacement warranty on the outgoing unit for hidden defects (excluding accidental drops or water damage).
+                <strong>Trade Conditions:</strong> Both parties acknowledge the condition of the exchanged units. The customer confirms ownership of the traded-in phone and releases all claims. The store provides a <strong>7-day direct replacement warranty</strong> + <strong>1-year service warranty</strong> on the outgoing unit for hidden factory defects (excluding accidental drops, cracked screens, or liquid damage). Accessories exchanged carry a 3-day replacement warranty.
             </div>
 
             <div class="signatures">
@@ -119,7 +119,7 @@ if (!$tr) {
                 </div>
                 <div class="sign-col">
                     <div class="sign-line">Authorized Store Representative</div>
-                    <small>8J Cellphone Accessories</small>
+                    <small>8J Cellphone &amp; Accessories</small>
                 </div>
             </div>
         </div>

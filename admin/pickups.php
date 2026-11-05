@@ -22,9 +22,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
         if ($order && strtoupper($order['claim_verification_code']) === strtoupper($entered_code)) {
             $staff_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
-            $stmt = $pdo->prepare("UPDATE online_orders SET pickup_status = 'claimed', claimed_at = NOW(), handled_by_staff_id = ? WHERE id = ?");
-            $stmt->execute([$staff_id, $order_id]);
-            $message = "Success: Claim code verified! Order has been released to customer.";
+            
+            try {
+                $pdo->beginTransaction();
+
+                $stmt = $pdo->prepare("UPDATE online_orders SET pickup_status = 'claimed', claimed_at = NOW(), handled_by_staff_id = ? WHERE id = ?");
+                $stmt->execute([$staff_id, $order_id]);
+
+                // Fetch order items and accurately deduct stock / mark unit as sold
+                $item_stmt = $pdo->prepare("SELECT * FROM online_order_items WHERE order_id = ?");
+                $item_stmt->execute([$order_id]);
+                $order_items = $item_stmt->fetchAll();
+
+                foreach ($order_items as $item) {
+                    if ($item['item_type'] === 'phone_unit' && !empty($item['phone_unit_id'])) {
+                        $pdo->prepare("UPDATE phone_units SET status = 'sold' WHERE id = ?")->execute([$item['phone_unit_id']]);
+                    } elseif ($item['item_type'] === 'product' && !empty($item['product_id'])) {
+                        $pdo->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ?")->execute([$item['quantity'], $item['product_id']]);
+                    }
+                }
+
+                audit_log('Pick-up Claimed', 'Pickups', "Order {$order['order_code']} verified with claim code and released to customer");
+                $pdo->commit();
+                $message = "Success: Claim code verified! Order has been released and inventory updated.";
+            } catch (Exception $e) {
+                if ($pdo->inTransaction()) $pdo->rollBack();
+                $message = "Error releasing order: " . $e->getMessage();
+            }
         } else {
             $message = "Error: Invalid claim verification code! Please check the customer's pickup claim ticket.";
         }

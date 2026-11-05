@@ -205,10 +205,17 @@ $current_page = basename($_SERVER['PHP_SELF']);
         }
         .sidebar {
             background-color: var(--sidebar-bg);
-            min-height: calc(100vh - 65px);
+            height: calc(100vh - 65px);
+            position: sticky;
+            top: 65px;
+            overflow-y: auto;
             color: #a1a1aa;
-            padding-top: 1.5rem;
+            padding-top: 1.25rem;
+            padding-bottom: 2rem;
             border-right: 1px solid #18181b;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255,255,255,0.2) transparent;
+            z-index: 100;
         }
         .sidebar .nav-link {
             color: #a1a1aa;

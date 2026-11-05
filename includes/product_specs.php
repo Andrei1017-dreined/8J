@@ -230,32 +230,6 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Dust Absorber & Guide Sticker Sheet'
         ];
         $specs['gallery'] = ['screen_protector.jpg'];
-    } elseif (stripos($sku, 'ACC-CSE-005') !== false || stripos($name, 'MagSafe') !== false) {
-        $specs['tagline'] = 'Shockproof Military-Grade Clear Case with Integrated N52 Magnetic Ring';
-        $specs['overview'] = 'Keep your phone protected while showing off its original colors. This hybrid protective case combines a crystal-clear scratch-resistant acrylic back with shock-absorbing TPU bumpers. Built-in 38-piece N52 neodymium magnets provide instant, ultra-strong alignment with all MagSafe chargers, wallets, and car mounts.';
-        $specs['highlights'] = [
-            'Built-in 38 N52 High-Strength Neodymium Magnets for firm MagSafe lock',
-            'Military-Grade Drop Protection (MIL-STD-810G air-cushioned corners)',
-            'Bayer Anti-Yellowing Polymer ensures long-lasting transparency',
-            '1.2mm Raised Screen Lips & 1.5mm Raised Camera Bezel',
-            'Tactile Independent Metallic Button Covers'
-        ];
-        $specs['technical_details'] = [
-            'Brand' => 'OEM MagSafe Series',
-            'SKU' => 'ACC-CSE-005',
-            'Backplate Material' => '4H Scratch-Resistant Rigid Acrylic',
-            'Bumper Material' => 'Flexible Shock-Absorbing Thermoplastic Polyurethane (TPU)',
-            'Magnet Count' => '38-Piece N52 Neodymium Array',
-            'Drop Test Rating' => 'Certified 6-Foot Drop Resistant',
-            'Wireless Charging Support' => '15W MagSafe & Qi Fast Wireless Charging',
-            'Warranty' => '7-Day Replacement Guarantee'
-        ];
-        $specs['compatibility'] = 'Apple iPhone 15 Pro (6.1" Triple Camera).';
-        $specs['package_contents'] = [
-            '1x MagSafe Clear Shockproof Hybrid Case',
-            '1x Protective Scratch Peel-Off Film'
-        ];
-        $specs['gallery'] = ['magsafe_case.jpg'];
     } elseif (stripos($sku, 'ACC-AUD-008') !== false || stripos($name, 'AirPods Pro') !== false) {
         $specs['tagline'] = 'Active Noise Cancellation, Adaptive Audio & Personalized Spatial Audio with USB-C';
         $specs['overview'] = 'Apple AirPods Pro (2nd generation) with MagSafe Case delivers up to 2x more Active Noise Cancellation than the previous generation. Adaptive Audio intelligently tailors noise control to your environment, while Transparency mode lets outside sound in so you can hear what is happening around you. Featuring the Apple H2 headphone chip and Apple U1 chip in the MagSafe Charging Case with speaker and lanyard loop.';
@@ -288,7 +262,7 @@ function get_product_full_specs($item, $type = 'product') {
             '1x USB-C Charge Cable',
             '1x Documentation & 8J Warranty Claim Slip'
         ];
-        $specs['gallery'] = ['airpods_pro_2.png', 'airpods_3.png'];
+        $specs['gallery'] = ['airpods_pro_2.png'];
     } elseif (stripos($sku, 'ACC-AUD-009') !== false || stripos($name, 'AirPods (3rd') !== false) {
         $specs['tagline'] = 'Personalized Spatial Audio, Force Sensor Controls & Up to 30 Hours Battery';
         $specs['overview'] = 'AirPods (3rd generation) feature Personalized Spatial Audio with dynamic head tracking that places sound all around you, plus Adaptive EQ that tunes music to your ears. With an all-new contoured design and shorter stem, the force sensor lets you easily control your entertainment and calls.';
@@ -318,8 +292,8 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Lightning to USB-C Cable',
             '1x Quick Start Guide'
         ];
-        $specs['gallery'] = ['airpods_3.png', 'airpods_pro_2.png'];
-    } elseif (stripos($sku, 'ACC-CHG-010') !== false || stripos($name, 'MagSafe Fast Wireless Charger') !== false) {
+        $specs['gallery'] = ['airpods_3.png'];
+    } elseif (stripos($sku, 'ACC-CHG-010') !== false || stripos($name, 'MagSafe Fast Wireless Charger') !== false || stripos($name, 'MagSafe Charger') !== false) {
         $specs['tagline'] = 'Snap-On 15W Magnetic Fast Wireless Charger for iPhone 12 to 15 Series';
         $specs['overview'] = 'The Apple MagSafe Charger makes wireless charging a snap. The perfectly aligned magnets attach to your iPhone 12, 13, 14, or 15 to provide faster wireless charging up to 15W. Maintains compatibility with Qi charging so it can be used to wirelessly charge iPhone 8 or later, as well as AirPods models with a wireless charging case.';
         $specs['highlights'] = [
@@ -343,8 +317,8 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Apple MagSafe Charger with 1m Integrated USB-C Cable',
             '1x User Manual & 8J Authenticity Tag'
         ];
-        $specs['gallery'] = ['apple_magsafe_charger.png', 'apple_magsafe_battery.png'];
-    } elseif (stripos($sku, 'ACC-PWR-011') !== false || stripos($name, 'MagSafe Magnetic Battery Pack') !== false) {
+        $specs['gallery'] = ['apple_magsafe_charger.png'];
+    } elseif (stripos($sku, 'ACC-PWR-011') !== false || (stripos($name, 'MagSafe') !== false && stripos($name, 'Battery') !== false)) {
         $specs['tagline'] = 'Compact Magnetic Wireless Battery Pack - Snap & Go Everyday Power';
         $specs['overview'] = 'Attaching the MagSafe Battery Pack is a breeze. Its compact, intuitive design makes on-the-go charging easy. The perfectly aligned magnets keep it attached to your iPhone 12, 13, 14, or 15 providing safe and reliable wireless charging automatically without pressing buttons.';
         $specs['highlights'] = [
@@ -367,7 +341,33 @@ function get_product_full_specs($item, $type = 'product') {
             '1x Apple MagSafe Magnetic Battery Pack 5000mAh',
             '1x Quick Start Guide'
         ];
-        $specs['gallery'] = ['apple_magsafe_battery.png', 'apple_magsafe_charger.png'];
+        $specs['gallery'] = ['apple_magsafe_battery.png'];
+    } elseif (stripos($sku, 'ACC-CSE-005') !== false || (stripos($name, 'Case') !== false && stripos($name, 'AirPods') === false && stripos($name, 'Earbuds') === false)) {
+        $specs['tagline'] = 'Shockproof Military-Grade Clear Case with Integrated N52 Magnetic Ring';
+        $specs['overview'] = 'Keep your phone protected while showing off its original colors. This hybrid protective case combines a crystal-clear scratch-resistant acrylic back with shock-absorbing TPU bumpers. Built-in 38-piece N52 neodymium magnets provide instant, ultra-strong alignment with all MagSafe chargers, wallets, and car mounts.';
+        $specs['highlights'] = [
+            'Built-in 38 N52 High-Strength Neodymium Magnets for firm MagSafe lock',
+            'Military-Grade Drop Protection (MIL-STD-810G air-cushioned corners)',
+            'Bayer Anti-Yellowing Polymer ensures long-lasting transparency',
+            '1.2mm Raised Screen Lips & 1.5mm Raised Camera Bezel',
+            'Tactile Independent Metallic Button Covers'
+        ];
+        $specs['technical_details'] = [
+            'Brand' => 'OEM MagSafe Series',
+            'SKU' => 'ACC-CSE-005',
+            'Backplate Material' => '4H Scratch-Resistant Rigid Acrylic',
+            'Bumper Material' => 'Flexible Shock-Absorbing Thermoplastic Polyurethane (TPU)',
+            'Magnet Count' => '38-Piece N52 Neodymium Array',
+            'Drop Test Rating' => 'Certified 6-Foot Drop Resistant',
+            'Wireless Charging Support' => '15W MagSafe & Qi Fast Wireless Charging',
+            'Warranty' => '7-Day Replacement Guarantee'
+        ];
+        $specs['compatibility'] = 'Apple iPhone 15 Pro (6.1" Triple Camera).';
+        $specs['package_contents'] = [
+            '1x MagSafe Clear Shockproof Hybrid Case',
+            '1x Protective Scratch Peel-Off Film'
+        ];
+        $specs['gallery'] = ['iphone_15_pro_clear_case.png', 'magsafe_case.jpg'];
     } elseif (stripos($sku, 'ACC-DEV-012') !== false || stripos($name, 'Watch Ultra') !== false) {
         $specs['tagline'] = '49mm Aerospace Titanium Case, 3000 Nits Brightness & Precision Dual GPS';
         $specs['overview'] = 'Apple Watch Ultra 2 is crafted for unprecedented performance. The lightweight titanium case is rugged and corrosion resistant, and it is raised to protect the sapphire front crystal from edge impacts. Powered by the S9 SiP with a 3000-nit Always-On Retina display and innovative double tap gesture.';
@@ -430,44 +430,106 @@ function get_product_full_specs($item, $type = 'product') {
             '1x User Manual & 8J Warranty Slip'
         ];
         $specs['gallery'] = ['lenovo_earbuds.jpg'];
-    } elseif ($type === 'unit' || isset($item['imei_1'])) {
-        // Certified Phone Unit Specs
-        $specs['tagline'] = '8J Certified Pre-Owned Smartphone - 100% Inspected & Openline';
-        $specs['overview'] = "This {$item['brand']} {$item['model_name']} ({$item['storage_capacity']}, {$item['color']}) is an 8J certified pre-owned smartphone inspected through our rigorous 25-point hardware and software diagnostic checklist. It is completely openline to all SIM networks (Globe, Smart, DITO, TM, TNT), iCloud/Google account clean, and ready for immediate daily driving.";
+    } elseif (
+        $type === 'unit'
+        || isset($item['imei_1'])
+        || (($item['category_id'] ?? 0) == 6)
+        || stripos($sku, 'PHN-') === 0
+        || in_array(strtolower($brand), ['oppo', 'honor', 'infinix', 'realme', 'itel', 'techlife'])
+    ) {
+        // Extract storage capacity & clean model name if item comes from `products` table
+        $modelName = $item['model_name'] ?? preg_replace('/\s*\([^)]*\)/', '', $name);
+        $storageCap = $item['storage_capacity'] ?? '128GB';
+        if (empty($item['storage_capacity']) && preg_match('/\(([^)]+)\)/', $name, $capMatch)) {
+            $storageCap = $capMatch[1];
+        }
+        $colorFinish = $item['color'] ?? 'Official Store Finish';
+        $conditionGrade = $item['unit_condition'] ?? 'Brand New Sealed';
+        $batteryHealth = isset($item['battery_health']) && $item['battery_health'] ? $item['battery_health'] . '% (Verified)' : '100% (Brand New Sealed)';
+        $imeiDisplay = !empty($item['imei_1']) ? substr($item['imei_1'], 0, 8) . '****** (Inspected Clean)' : ($sku ?: 'Official NTC Serial Verified');
+
+        $isTablet = (stripos($name, 'Xpad') !== false || stripos($name, 'Pad') !== false || stripos($name, 'Vista Tab') !== false || stripos($name, 'Tablet') !== false);
+        $deviceWord = $isTablet ? 'Tablet' : 'Smartphone';
+
+        // Default Smartphone / Tablet Specs
+        $specs['tagline'] = "Official {$brand} {$modelName} ({$storageCap}) — 8J Certified {$deviceWord} • 100% Openline";
+        $specs['overview'] = !empty($item['description'])
+            ? $item['description'] . " Available at 8J Cellphone & Accessories Tanauan City branch with full 25-point hardware inspection, official NTC compliance, and openline compatibility across all Philippine networks (Smart, Globe, DITO, TNT, TM, GOMO)."
+            : "This {$brand} {$modelName} ({$storageCap}, {$colorFinish}) is an official 8J Tanauan {$deviceWord} inspected through our 25-point diagnostic checklist. Completely openline to all SIM networks (Globe, Smart, DITO, TM, TNT) and ready for immediate pickup.";
+
         $specs['highlights'] = [
-            '25-Point Comprehensive Technical Diagnostic Verified',
-            'Condition Grade: ' . ($item['unit_condition'] ?? 'Grade A'),
-            'Battery Health: ' . ($item['battery_health'] ? $item['battery_health'] . '% (Healthy)' : 'Tested & Verified'),
-            '100% Clean Account Status: No iCloud, Google, or Carrier Locks',
-            'Factory Unlocked / Openline to All Mobile Networks',
-            'Clean NTC Record & Anti-Fencing Law Compliance Verified',
-            '30-Day Store Service Warranty & After-Sales Support'
+            "Official {$brand} {$modelName} ({$storageCap}) — {$conditionGrade}",
+            '120Hz / 90Hz High-Refresh Eye-Care Display with Vivid Color Calibration',
+            'Octa-Core 5G / 4G LTE Processor with Extended Virtual RAM Support',
+            '5,000mAh+ All-Day Battery with Type-C Fast Charging Architecture',
+            'Factory Unlocked / Openline to All Philippine SIM Networks (Smart, Globe, DITO)',
+            'Side-Mounted Fingerprint Sensor & AI Face Unlock Biometrics',
+            '1-Year Official Service Warranty + 7-Day 8J Tanauan Direct Replacement'
         ];
         $specs['technical_details'] = [
-            'Brand' => $item['brand'],
-            'Model' => $item['model_name'],
-            'Internal Storage' => $item['storage_capacity'],
-            'Color Finish' => $item['color'],
-            'Cosmetic Condition' => $item['unit_condition'] ?? 'Grade A',
-            'Battery Health' => ($item['battery_health'] ?? '85+') . '%',
-            'Network Lock' => 'Openline / Factory Unlocked (All SIMs)',
-            'IMEI / Serial' => substr($item['imei_1'], 0, 8) . '****** (Inspected Clean)',
-            'Display & Touch' => 'Original Screen, 100% Touch Responsive, No Dead Pixels',
-            'Biometrics' => 'Face ID / Fingerprint Scanner Fully Operational',
-            'Cameras' => 'Front & Rear Cameras, Autofocus, Flash, and Video Tested',
-            'Connectivity' => '5G / 4G LTE, Wi-Fi, Bluetooth, GPS, and Cellular Validated',
-            'Audio & Mic' => 'Earpiece, Loudspeakers, and Noise-Cancelling Mics Clear',
-            'Charging & Battery' => 'Charging Port and Battery Retain Standard Charge Cycle'
+            'Brand' => $brand,
+            'Model' => $modelName,
+            'Internal Storage / RAM' => $storageCap,
+            'Color Finish' => $colorFinish,
+            'Condition Grade' => $conditionGrade,
+            'Battery Status' => $batteryHealth,
+            'Network Status' => 'Openline / Factory Unlocked (Dual Nano-SIM)',
+            'SKU / IMEI Reference' => $imeiDisplay,
+            'Display Panel' => $isTablet ? '11.0-inch FHD+ 90Hz Eye-Protection IPS Display' : '6.7-inch HD+ / FHD+ High-Refresh Punch-Hole Display',
+            'Biometrics' => 'Fast Fingerprint Scanner & AI Face Unlock',
+            'Camera System' => 'AI High-Resolution Main Camera + Portrait Depth Sensor & LED Flash',
+            'Connectivity' => (stripos($name, '5G') !== false ? '5G NR / 4G LTE, Dual-Band Wi-Fi, Bluetooth 5.3, USB Type-C' : '4G LTE Dual SIM, Dual-Band Wi-Fi, Bluetooth 5.2, USB Type-C'),
+            'Audio System' => $isTablet ? 'Quad Stereo Speakers with Dolby Atmos / Hi-Res Audio' : 'High-Output Speaker with AI Voice Noise Reduction',
+            'Charging & Battery' => $isTablet ? '7,000mAh - 8,000mAh Long-Lasting Battery with Type-C Fast Charge' : '5,000mAh Long-Cycle Battery with Type-C Fast Charging'
         ];
-        $specs['compatibility'] = 'Supports all Philippine SIM cards (Smart, Globe, DITO, GOMO, TNT, TM) and international roaming.';
+        $specs['compatibility'] = 'Supports all Philippine SIM cards (Smart, Globe, DITO, GOMO, TNT, TM), banking apps (GCash, Maya, BDO, BPI), and international roaming.';
         $specs['package_contents'] = [
-            "1x {$item['brand']} {$item['model_name']} ({$item['storage_capacity']}) Unit",
-            '1x Heavy-Duty Charging Cable & Fast Wall Adapter',
-            '1x Pre-Installed Screen Protector',
-            '1x Clear Protective Case',
-            '1x SIM Ejector Tool',
-            '1x Official 8J Certified Warranty Certificate & Claim Slip'
+            "1x {$brand} {$modelName} ({$storageCap}) {$deviceWord}",
+            '1x Original Type-C Fast Charging Cable & Wall Power Adapter',
+            '1x Protective Clear Case & Pre-Applied Screen Protector',
+            '1x SIM Ejector Pin & Quick Start Guide',
+            '1x Official 8J Tanauan Warranty Certificate & Claim Slip'
         ];
+
+        // Brand-specific enrichments for Oppo, Honor, Infinix, Realme, Itel, TechLife
+        if (stripos($brand, 'Oppo') !== false) {
+            $specs['tagline'] = (stripos($name, '5G') !== false ? '5G Ultra-Fast Connectivity, ' : '') . '90Hz Sunlight Display, 50MP AI Camera & 5000mAh SUPERVOOC Battery';
+            $specs['technical_details']['Operating System'] = 'ColorOS based on Android 14';
+            $specs['technical_details']['Surface Design'] = 'Signature OPPO Glow Scratch-Resistant Crystalline Finish';
+        } elseif (stripos($brand, 'Honor') !== false) {
+            if (stripos($name, 'X9c') !== false || stripos($name, 'X9b') !== false) {
+                $specs['tagline'] = 'Ultra-Bounce Anti-Drop Curved AMOLED Display, 108MP OIS Camera & Massive Silicon-Carbon Battery';
+                $specs['technical_details']['Display Panel'] = '6.78-inch 1.5K 120Hz Curved AMOLED (360° Anti-Drop Certified)';
+                $specs['technical_details']['Camera System'] = '108MP OIS Ultra-Clear Main Camera + 5MP Ultra-Wide';
+            } elseif (stripos($name, '200') !== false) {
+                $specs['tagline'] = 'Studio Harcourt Portrait Master, Triple 50MP OIS Camera & 100W Honor SuperCharge';
+                $specs['technical_details']['Camera System'] = '50MP Portrait Main (OIS) + 50MP Telephoto (OIS) + 50MP Selfie';
+            } else {
+                $specs['tagline'] = 'MagicOS Smart Experience, High-Resolution AI Camera & All-Day Long-Life Battery';
+            }
+            $specs['technical_details']['Operating System'] = 'MagicOS based on Android 14';
+        } elseif (stripos($brand, 'Infinix') !== false) {
+            if (stripos($name, 'GT 20') !== false || stripos($name, 'GT 10') !== false) {
+                $specs['tagline'] = 'Cyber Mecha Gaming Design, 144Hz AMOLED Esports Display & Dimensity 8200 Ultimate / Gaming Chipset';
+                $specs['technical_details']['Display Panel'] = '6.78-inch FHD+ 144Hz Bezel-Less AMOLED Gaming Display';
+                $specs['technical_details']['Special Features'] = 'Mecha Loop LED Interface, Bypass Charging & XBoost Gaming Engine';
+            } elseif (stripos($name, 'Note 40') !== false || stripos($name, 'Note Edge') !== false) {
+                $specs['tagline'] = '120Hz 3D-Curved AMOLED Display, 108MP OIS Super-Zoom Cam & All-Round FastCharge 2.0 + MagCharge';
+            } elseif (stripos($name, 'Hot 50') !== false || stripos($name, 'Hot 40') !== false) {
+                $specs['tagline'] = '120Hz Ultra-Smooth Gaming Display, Helio G100 / G99 Processor & 5000mAh FastCharge Battery';
+            }
+        } elseif (stripos($brand, 'Realme') !== false) {
+            if (stripos($name, '13 5G') !== false) {
+                $specs['tagline'] = 'Dimensity 6300 5G Speed Chipset, 120Hz Eye Comfort Display, 50MP OIS Camera & 45W Fast Charge';
+            } else {
+                $specs['tagline'] = 'ArmorShell Tough Build, 90Hz Eye Comfort Display & 5000mAh Massive Battery';
+            }
+            $specs['technical_details']['Operating System'] = 'realme UI based on Android 14';
+        } elseif (stripos($brand, 'Itel') !== false) {
+            $specs['tagline'] = 'Dynamic Bar Interactive Display, Big Storage Capacity & 5000mAh Type-C Endurance Battery';
+        } elseif (stripos($brand, 'TechLife') !== false) {
+            $specs['tagline'] = 'Large Widescreen Display, 7000mAh+ All-Day Battery & LTE Cellular + Wi-Fi Productivity';
+        }
 
         // Phone gallery photos based on model
         if (stripos($name, 'Smart 20') !== false) {
@@ -649,13 +711,141 @@ function get_product_full_specs($item, $type = 'product') {
         }
     }
 
-    // Ensure main image is first in gallery
+    // Ensure clean studio cutout (gsm_*.jpg) + studio spec showcase (studio_*.png) are both in gallery
     if (!empty($item['image'])) {
-        array_unshift($specs['gallery'], $item['image']);
+        if (strpos($item['image'], 'studio_') === 0) {
+            $slug = substr(pathinfo($item['image'], PATHINFO_FILENAME), 7);
+            $gsmCandidate = 'gsm_' . $slug . '.jpg';
+            $gsmPath = __DIR__ . '/../assets/img/products/' . $gsmCandidate;
+            if (file_exists($gsmPath)) {
+                array_unshift($specs['gallery'], $item['image']);
+                array_unshift($specs['gallery'], $gsmCandidate);
+            } else {
+                array_unshift($specs['gallery'], $item['image']);
+            }
+        } elseif (strpos($item['image'], 'gsm_') === 0) {
+            $slug = substr(pathinfo($item['image'], PATHINFO_FILENAME), 4);
+            $studioCandidate = 'studio_' . $slug . '.png';
+            $studioPath = __DIR__ . '/../assets/img/products/' . $studioCandidate;
+            if (file_exists($studioPath)) {
+                array_unshift($specs['gallery'], $studioCandidate);
+            }
+            array_unshift($specs['gallery'], $item['image']);
+        } else {
+            array_unshift($specs['gallery'], $item['image']);
+        }
         $specs['gallery'] = array_values(array_unique($specs['gallery']));
     }
 
+    // Official multi-angle press photos (front / back / side / camera closeup) take priority, keeping studio spec poster at the end
+    $press = get_model_press_gallery($brand, $name);
+    if (!empty($press)) {
+        $rest = array_filter($specs['gallery'], function ($g) {
+            return strpos($g, 'gsm_') !== 0 && strpos($g, 'gallery/') !== 0;
+        });
+        $specs['gallery'] = array_values(array_unique(array_merge($press, $rest)));
+    }
+
     return $specs;
+}
+
+/**
+ * Normalized model key, e.g. "Honor" + "X9b 5G (256GB)" => "honor-x9b-5g", "Apple" + "iPhone 15" => "apple-iphone-15".
+ */
+function get_model_key($brand, $name) {
+    $b = strtolower(trim((string)$brand));
+    $n = strtolower(trim(preg_replace('/\s*\([^)]*\)/', '', (string)$name)));
+    $n = str_replace('+', ' plus', $n);
+    if ($b !== '' && strpos($n, $b . ' ') !== 0) {
+        $n = $b . ' ' . $n;
+    }
+    return trim(preg_replace('/[^a-z0-9]+/', '-', $n), '-');
+}
+
+/**
+ * Returns gallery-relative paths of downloaded official press photos for a model (assets/img/products/gallery/<key>-N.jpg).
+ */
+function get_model_press_gallery($brand, $name) {
+    $key = get_model_key($brand, $name);
+    if ($key === '') return [];
+    $files = glob(__DIR__ . '/../assets/img/products/gallery/' . $key . '-*.jpg') ?: [];
+    natsort($files);
+    return array_map(function ($f) { return 'gallery/' . basename($f); }, array_values($files));
+}
+
+/**
+ * Checks whether a product/unit has a verified photorealistic online 3D CAD model on Sketchfab.
+ * Matches `resolveSketchfabModelUID` in `assets/js/product-3d-viewer.js`.
+ */
+function has_online_3d_model($name, $brand = '') {
+    $n = strtolower(trim((string)$name));
+    $b = strtolower(trim((string)$brand));
+    $hay = $b . ' ' . $n;
+
+    // 1. All Apple iPhones & Apple Accessories have verified real 3D CAD models
+    if ($b === 'apple' || strpos($hay, 'iphone') !== false || strpos($hay, 'airpods') !== false || strpos($hay, 'watch ultra') !== false || strpos($hay, 'apple watch') !== false || strpos($hay, 'magsafe') !== false) {
+        return true;
+    }
+
+    // 2. Android Smartphones with verified high-poly Sketchfab 3D CAD models
+    if (strpos($n, 'galaxy s22') !== false || ($b === 'samsung' && strpos($n, 'protector') === false)) {
+        return true;
+    }
+    if ($b === 'infinix' && strpos($n, 'note 40 pro') !== false) {
+        return true;
+    }
+
+    // 3. Store Accessories with verified 3D CAD models
+    $accKeywords = ['lenovo', 'lp40', 'gm2', '20w', 'adapter', 'capsule', 'bavin', 'powerbank', 'power bank', 'baseus', 'anker', 'case', 'glass', 'protector', 'tempered', 'cable', 'cord'];
+    foreach ($accKeywords as $kw) {
+        if (strpos($n, $kw) !== false) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
+/**
+ * Extracts 4 executive Bento hardware spec cards for the Product Detail showcase.
+ */
+function get_quick_bento_specs($item, $specs) {
+    $td = $specs['technical_details'] ?? [];
+    $name = $item['name'] ?? ($item['model_name'] ?? '');
+    $brand = $item['brand'] ?? '8J Official';
+
+    $display = $td['Display'] ?? ($td['Display Size & Panel'] ?? ($td['Display Panel'] ?? ($td['Connector'] ?? ($td['Max Power Output'] ?? 'Store Certified'))));
+    $chipset = $td['Processor'] ?? ($td['Processor (SoC)'] ?? ($td['Bluetooth Version'] ?? ($td['Fast Charge Protocols'] ?? ($item['storage_capacity'] ?? 'Official Hardware'))));
+    $camera  = $td['Rear Cameras'] ?? ($td['Rear Camera'] ?? ($td['Camera System'] ?? ($td['Material'] ?? ($td['Speaker Driver Size'] ?? 'Precision Engineered'))));
+    $battery = $td['Battery & Charging'] ?? ($td['Charging & Battery'] ?? ($td['Battery Health'] ?? ($td['Battery Status'] ?? ($td['Warranty'] ?? '8J Store Warranty'))));
+
+    // Shorten cleanly for Bento pills
+    $short = function($str, $max = 36) {
+        $s = trim(preg_replace('/\s*\([^)]*\)/', '', (string)$str));
+        if (strlen($s) > $max) {
+            $parts = explode(',', $s);
+            $s = trim($parts[0]);
+        }
+        return mb_substr($s, 0, $max);
+    };
+
+    $isPhone = isset($item['imei_1']) || (($item['category_id'] ?? 0) == 6) || stripos($item['sku'] ?? '', 'PHN-') === 0 || in_array(strtolower($brand), ['apple', 'oppo', 'honor', 'infinix', 'realme', 'itel', 'techlife', 'samsung', 'xiaomi']) && (!stripos($name, 'adapter') && !stripos($name, 'cable') && !stripos($name, 'case') && !stripos($name, 'glass') && !stripos($name, 'airpods') && !stripos($name, 'magsafe'));
+
+    if ($isPhone) {
+        return [
+            ['icon' => 'fa-mobile-screen-button', 'label' => 'DISPLAY PANEL', 'value' => $short($display, 34)],
+            ['icon' => 'fa-microchip',            'label' => 'CORE ARCHITECTURE', 'value' => $short($chipset, 34)],
+            ['icon' => 'fa-camera-retro',         'label' => 'OPTICAL SYSTEM', 'value' => $short($camera, 34)],
+            ['icon' => 'fa-battery-full',         'label' => 'POWER & ENDURANCE', 'value' => $short($battery, 34)],
+        ];
+    }
+
+    return [
+        ['icon' => 'fa-bolt',          'label' => 'INTERFACE / OUTPUT', 'value' => $short($display, 34)],
+        ['icon' => 'fa-microchip',     'label' => 'TECHNOLOGY SPEC',    'value' => $short($chipset, 34)],
+        ['icon' => 'fa-layer-group',   'label' => 'BUILD & MATERIAL',   'value' => $short($camera, 34)],
+        ['icon' => 'fa-shield-halved', 'label' => 'WARRANTY COVERAGE',  'value' => $short($battery, 34)],
+    ];
 }
 
 /**

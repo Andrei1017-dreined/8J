@@ -263,7 +263,8 @@ function removeItem(idx) {
 
 function clearCart() {
     localStorage.removeItem('8j_cart');
-    refreshCartBadge();
+    localStorage.setItem('8j_cart', '[]');
+    if (typeof refreshCartBadge === 'function') refreshCartBadge();
     renderCartView();
 }
 

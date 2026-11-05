@@ -6,10 +6,15 @@ require_once __DIR__ . '/includes/header.php';
 $featured_products = [];
 $featured_units = [];
 try {
-    $stmt = $pdo->query("SELECT * FROM products WHERE status = 'available' ORDER BY (brand = 'Apple') DESC, id DESC LIMIT 8");
+    $stmt = $pdo->query("SELECT * FROM products WHERE status = 'available' AND (sku LIKE 'ACC-%' OR category_id != 6) ORDER BY (brand = 'Apple') DESC, id DESC LIMIT 8");
     $featured_products = $stmt->fetchAll();
 
-    $stmt2 = $pdo->query("SELECT * FROM phone_units WHERE status = 'in_stock' ORDER BY (brand = 'Apple') DESC, id DESC LIMIT 8");
+    $stmt2 = $pdo->query("SELECT MIN(id) as id, brand, model_name, storage_capacity, color, unit_condition, battery_health, selling_price, status, image, imei_1, COUNT(*) as unit_count
+                          FROM phone_units
+                          WHERE status = 'in_stock'
+                          GROUP BY brand, model_name, storage_capacity
+                          ORDER BY FIELD(brand, 'Apple', 'Honor', 'Infinix', 'Realme', 'Oppo', 'Samsung', 'Itel', 'TechLife') ASC, selling_price DESC
+                          LIMIT 8");
     $featured_units = $stmt2->fetchAll();
 } catch (Exception $e) {
     // Handled gracefully
@@ -483,9 +488,556 @@ try {
         min-height: auto;
     }
 }
+
+/* ============================================================================
+   APPLE-STYLE SCROLL-DRIVEN FLAGSHIP ENTRANCE SHOWCASE
+   ============================================================================ */
+.scrolly-track {
+    position: relative;
+    height: 235vh;
+    background-color: #040407 !important;
+    background: radial-gradient(130% 90% at 50% 28%, #1f170e 0%, #0d0a07 50%, #040407 100%) !important;
+    color: #ffffff;
+    overflow: clip;
+    z-index: 20;
+    transition: background 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scrolly-sticky {
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    min-height: 600px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    padding: clamp(14px, 2vh, 26px) 0;
+}
+.scrolly-aura {
+    position: absolute;
+    width: clamp(380px, 46vw, 680px);
+    height: clamp(380px, 46vw, 680px);
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.42) 0%, rgba(245, 158, 11, 0.20) 40%, rgba(212, 175, 55, 0.05) 60%, transparent 75%);
+    filter: blur(55px);
+    pointer-events: none;
+    z-index: 1;
+    transition: all 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.scrolly-bg-word {
+    position: absolute;
+    left: 50%;
+    top: 48%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(4.5rem, 13vw, 12rem);
+    font-weight: 900;
+    letter-spacing: -0.04em;
+    line-height: 0.85;
+    white-space: nowrap;
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.18) 0%, rgba(255, 255, 255, 0.02) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    pointer-events: none;
+    user-select: none;
+    z-index: 2;
+    will-change: transform, opacity;
+    transition: opacity 0.4s ease;
+}
+.scrolly-stage-center {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    perspective: 1200px;
+    z-index: 4;
+}
+.scrolly-phone-rig {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transform-style: preserve-3d;
+    will-change: transform;
+    transition: transform 0.08s linear;
+}
+.scrolly-hero-cutout {
+    height: clamp(320px, 46vh, 480px);
+    width: auto;
+    max-width: 85vw;
+    object-fit: contain;
+    filter: drop-shadow(0 32px 55px rgba(0, 0, 0, 0.88)) drop-shadow(0 0 40px rgba(212, 175, 55, 0.35));
+    transition: filter 0.6s ease, transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+    user-select: none;
+    -webkit-user-drag: none;
+    display: block;
+}
+.scrolly-floor-shadow {
+    width: clamp(190px, 24vw, 310px);
+    height: 26px;
+    margin-top: -12px;
+    border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.94) 0%, rgba(0, 0, 0, 0.5) 45%, transparent 75%);
+    filter: blur(9px);
+    transform: scaleY(0.45);
+    pointer-events: none;
+    transition: transform 0.4s ease, opacity 0.4s ease;
+}
+.scrolly-angle-tabs {
+    position: absolute;
+    bottom: -18px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 5px 12px;
+    z-index: 6;
+}
+.scrolly-angle-tab-btn {
+    border: 0;
+    background: transparent;
+    color: rgba(255, 255, 255, 0.65);
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 4px 10px;
+    border-radius: 999px;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+}
+.scrolly-angle-tab-btn:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.12);
+}
+.scrolly-angle-tab-btn.active {
+    background: #ffffff;
+    color: #0b0b14;
+    font-weight: 800;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.35);
+}
+.scrolly-Spec-pill {
+    position: absolute;
+    background: rgba(10, 15, 29, 0.90);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-radius: 18px;
+    padding: 13px 18px;
+    width: 250px;
+    color: #ffffff;
+    box-shadow: 0 24px 50px rgba(0, 0, 0, 0.65), 0 0 0 1px rgba(255, 255, 255, 0.05);
+    z-index: 6;
+    will-change: transform, opacity;
+    pointer-events: none;
+    transition: border-color 0.4s ease;
+}
+.scrolly-Spec-pill .lbl {
+    font-size: 0.70rem;
+    font-weight: 800;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: #fbcfe8;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.scrolly-Spec-pill .val {
+    font-size: 0.94rem;
+    font-weight: 800;
+    color: #ffffff;
+    line-height: 1.28;
+}
+.scrolly-Spec-pill.p1 { left: calc(50% - 440px); top: 18%; }
+.scrolly-Spec-pill.p2 { right: calc(50% - 440px); top: 20%; }
+.scrolly-Spec-pill.p3 { left: calc(50% - 440px); bottom: 18%; }
+.scrolly-Spec-pill.p4 { right: calc(50% - 440px); bottom: 16%; }
+@media (max-width: 1199px) {
+    .scrolly-Spec-pill.p1 { left: 16px; top: 14%; width: 220px; }
+    .scrolly-Spec-pill.p2 { right: 16px; top: 16%; width: 220px; }
+    .scrolly-Spec-pill.p3 { left: 16px; bottom: 16%; width: 220px; }
+    .scrolly-Spec-pill.p4 { right: 16px; bottom: 14%; width: 220px; }
+}
+@media (max-width: 991px) {
+    .scrolly-track { height: auto; min-height: 680px; }
+    .scrolly-sticky { position: relative; top: 0; height: auto; min-height: 640px; padding: 32px 0; }
+    .scrolly-Spec-pill { display: none; }
+}
+.scrolly-switcher {
+    display: inline-flex;
+    background: rgba(15, 23, 42, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    padding: 5px;
+    gap: 5px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.45);
+}
+.scrolly-switcher button {
+    border: 0;
+    background: transparent;
+    color: #cbd5e1;
+    font-size: 0.82rem;
+    font-weight: 700;
+    padding: 8px 18px;
+    border-radius: 999px;
+    transition: all 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+.scrolly-switcher button:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.10);
+}
+.scrolly-switcher button.active {
+    background: #ffffff;
+    color: #0b0b14;
+    font-weight: 800;
+    box-shadow: 0 4px 16px rgba(255, 255, 255, 0.25);
+}
+.scrolly-progress-bar {
+    width: 160px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.18);
+    border-radius: 999px;
+    overflow: hidden;
+}
+.scrolly-progress-fill {
+    height: 100%;
+    width: 25%;
+    background: linear-gradient(90deg, #f472b6, #38bdf8);
+    border-radius: 999px;
+    transition: width 0.08s linear;
+}
 </style>
 
 <div class="container-fluid px-0">
+    <!-- Apple.com-Style Scroll-Driven Flagship Entrance Showcase -->
+    <section class="scrolly-track" id="scrollyEntrance">
+        <div class="scrolly-sticky">
+            <div class="scrolly-aura" id="scrollyAura"></div>
+            <div class="scrolly-bg-word" id="scrollyBgWord">TITANIUM</div>
+
+            <!-- Top Header & Interactive Flagship Switcher -->
+            <div class="container text-center position-relative" style="z-index: 5;">
+                <div class="d-inline-flex align-items-center gap-2 px-3 py-1.5 rounded-pill mb-2" style="background: rgba(255,255,255,0.10); border: 1px solid rgba(255,255,255,0.22); font-size: 0.74rem; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #ffffff;">
+                    <span class="pulse-indicator green"></span> 8J Flagship Studio • Scroll to Rotate &amp; Inspect
+                </div>
+                <h2 class="fw-extrabold mb-1" id="scrollyTitle" style="font-size: clamp(2rem, 4vw, 3.4rem); letter-spacing: -0.03em; color: #ffffff; text-shadow: 0 4px 24px rgba(0,0,0,0.8);">iPhone 15 Pro Max</h2>
+                <p class="small mb-3" id="scrollySub" style="color: #cbd5e1; font-size: clamp(0.92rem, 1.1vw, 1.05rem); font-weight: 500; text-shadow: 0 2px 10px rgba(0,0,0,0.8); max-width: 680px; margin-left: auto; margin-right: auto;">Forged in aerospace titanium. A17 Pro 3nm silicon. In stock at Victory Mall Tanauan.</p>
+
+                <div class="scrolly-switcher">
+                    <button type="button" class="active" onclick="selectScrollyDevice(0, this)">iPhone 15 Pro Max</button>
+                    <button type="button" onclick="selectScrollyDevice(1, this)">Honor X9c 5G</button>
+                    <button type="button" onclick="selectScrollyDevice(2, this)">Infinix GT 20 Pro</button>
+                    <button type="button" onclick="selectScrollyDevice(3, this)">Realme 13 5G</button>
+                </div>
+            </div>
+
+            <!-- Center 3D Scroll-Animated Hardware Stage -->
+            <div class="scrolly-stage-center" id="scrollyStageCenter">
+                <div class="scrolly-Spec-pill p1" id="scrollyPill1">
+                    <div class="lbl" id="sp1Lbl"><i class="fa-solid fa-microchip me-1"></i> CHIPSET ARCHITECTURE</div>
+                    <div class="val" id="sp1Val">Apple A17 Pro 3nm • 6-Core GPU</div>
+                </div>
+                <div class="scrolly-Spec-pill p2" id="scrollyPill2">
+                    <div class="lbl" id="sp2Lbl"><i class="fa-solid fa-camera-retro me-1"></i> PRO CAMERA SYSTEM</div>
+                    <div class="val" id="sp2Val">48MP Main • 5x Optical Telephoto</div>
+                </div>
+                <div class="scrolly-Spec-pill p3" id="scrollyPill3">
+                    <div class="lbl" id="sp3Lbl"><i class="fa-solid fa-mobile-screen me-1"></i> DISPLAY PANEL</div>
+                    <div class="val" id="sp3Val">6.7" Super Retina XDR 120Hz</div>
+                </div>
+                <div class="scrolly-Spec-pill p4" id="scrollyPill4">
+                    <div class="lbl" id="sp4Lbl"><i class="fa-solid fa-store me-1"></i> 8J TANAUAN COUNTER</div>
+                    <div class="val" id="sp4Val">Same-Day Pick-Up • 0% Deposit</div>
+                </div>
+
+                <!-- Pure Cutout Phone Rig: No cardboard white box! -->
+                <div class="scrolly-phone-rig" id="scrollyPhoneRig">
+                    <img id="scrollyPhoneImg" src="<?= BASE_URL ?>assets/img/products/showcase_iphone_15_pro_1.png" alt="Flagship Showcase" class="scrolly-hero-cutout">
+                    <div class="scrolly-floor-shadow" id="scrollyFloorShadow"></div>
+
+                    <!-- Interactive Angle / Colorway Dots -->
+                    <div class="scrolly-angle-tabs" id="scrollyAngleTabs">
+                        <button type="button" class="scrolly-angle-tab-btn active" onclick="setScrollyFrame(0, this)">Natural Titanium</button>
+                        <button type="button" class="scrolly-angle-tab-btn" onclick="setScrollyFrame(1, this)">Blue Titanium</button>
+                        <button type="button" class="scrolly-angle-tab-btn" onclick="setScrollyFrame(2, this)">Black Titanium</button>
+                        <button type="button" class="scrolly-angle-tab-btn" onclick="setScrollyFrame(3, this)">White Titanium</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Price Lockup, Scroll Progress & CTA -->
+            <div class="container position-relative" style="z-index: 5;">
+                <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 px-3 py-2.5 rounded-pill mx-auto" style="max-width: 820px; background: rgba(15, 23, 42, 0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border: 1px solid rgba(255,255,255,0.20); box-shadow: 0 25px 60px rgba(0, 0, 0, 0.7);">
+                    <div class="d-flex align-items-center gap-3 ps-2">
+                        <div>
+                            <div style="font-size: 0.68rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.1em; color: #94a3b8;">Counter Pick-Up Price</div>
+                            <div class="fw-extrabold" id="scrollyPrice" style="color: #4ade80; font-size: 1.55rem; line-height: 1.1; letter-spacing: -0.02em;">₱68,990.00</div>
+                        </div>
+                        <div class="d-none d-sm-flex align-items-center gap-2 ps-3 border-start border-light border-opacity-20">
+                            <div class="scrolly-progress-bar"><div class="scrolly-progress-fill" id="scrollyProgFill"></div></div>
+                            <span style="font-size: 0.72rem; color: #cbd5e1; font-weight: 600;" id="scrollyAngleLabel">Angle 1 • Front View</span>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-center gap-2">
+                        <a href="<?= BASE_URL ?>catalog.php?type=units" id="scrollyCtaLink" class="btn btn-primary btn-sm rounded-pill px-4 py-2 fw-extrabold text-white">
+                            Inspect Specs &amp; Reserve <i class="fa-solid fa-arrow-right ms-1"></i>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+
+    <script>
+    (function () {
+        const base = <?= json_encode(BASE_URL) ?>;
+        const scrollyDevices = [
+            {
+                title: 'iPhone 15 Pro Max',
+                sub: 'Forged in aerospace titanium. A17 Pro 3nm silicon. In stock at Victory Mall Tanauan.',
+                word: 'TITANIUM',
+                price: '₱68,990.00',
+                link: base + 'catalog.php?q=iPhone+15+Pro+Max',
+                bgGradient: 'radial-gradient(130% 90% at 50% 28%, #1f170e 0%, #0d0a07 50%, #040407 100%)',
+                auraColor: 'radial-gradient(circle at 50% 50%, rgba(212, 175, 55, 0.42) 0%, rgba(245, 158, 11, 0.20) 40%, rgba(212, 175, 55, 0.05) 60%, transparent 75%)',
+                dropGlow: 'drop-shadow(0 32px 55px rgba(0, 0, 0, 0.88)) drop-shadow(0 0 40px rgba(212, 175, 55, 0.35))',
+                accentColor: '#fbbf24',
+                frames: [
+                    base + 'assets/img/products/showcase_iphone_15_pro_1.png',
+                    base + 'assets/img/products/showcase_iphone_15_pro_2.png',
+                    base + 'assets/img/products/showcase_iphone_15_pro_3.png',
+                    base + 'assets/img/products/showcase_iphone_15_pro_4.png'
+                ],
+                frameLabels: ['Natural Titanium', 'Blue Titanium', 'Black Titanium', 'White Titanium'],
+                specs: [
+                    ['CHIPSET ARCHITECTURE', 'Apple A17 Pro 3nm • 6-Core GPU', 'fa-microchip'],
+                    ['PRO CAMERA SYSTEM', '48MP Main • 5x Optical Telephoto', 'fa-camera-retro'],
+                    ['DISPLAY PANEL', '6.7" Super Retina XDR 120Hz', 'fa-mobile-screen'],
+                    ['8J TANAUAN COUNTER', '3D CAD View • Same-Day Pick-Up', 'fa-store']
+                ]
+            },
+            {
+                title: 'HONOR X9c 5G',
+                sub: 'Ultra-Bounce Anti-Drop Curved AMOLED. 108MP OIS Camera & 6600mAh Silicon-Carbon Battery.',
+                word: 'UNBREAKABLE',
+                price: '₱16,999.00',
+                link: base + 'catalog.php?q=Honor+X9c',
+                bgGradient: 'radial-gradient(130% 90% at 50% 28%, #08241b 0%, #04140f 50%, #030807 100%)',
+                auraColor: 'radial-gradient(circle at 50% 50%, rgba(16, 185, 129, 0.45) 0%, rgba(5, 150, 105, 0.22) 40%, rgba(16, 185, 129, 0.05) 60%, transparent 75%)',
+                dropGlow: 'drop-shadow(0 32px 55px rgba(0, 0, 0, 0.88)) drop-shadow(0 0 40px rgba(16, 185, 129, 0.35))',
+                accentColor: '#34d399',
+                frames: [
+                    base + 'assets/img/products/showcase_honor_x9c_1.png',
+                    base + 'assets/img/products/showcase_honor_x9c_2.png',
+                    base + 'assets/img/products/showcase_honor_x9c_3.png'
+                ],
+                frameLabels: ['Front & Back View', 'Curved Display', 'Ultra-Bounce Close-up'],
+                specs: [
+                    ['ANTI-DROP ARMOR', '360° Ultra-Bounce Curved Shield', 'fa-shield-halved'],
+                    ['OPTICAL CAMERA', '108MP OIS Ultra-Clear Main Lens', 'fa-camera-retro'],
+                    ['CURVED DISPLAY', '6.78" 1.5K 120Hz Eye-Care AMOLED', 'fa-mobile-screen'],
+                    ['ENDURANCE BATTERY', '6600mAh Silicon-Carbon Fast Charge', 'fa-battery-full']
+                ]
+            },
+            {
+                title: 'Infinix GT 20 Pro',
+                sub: 'Cyber Mecha Gaming Design with Mecha Loop LED & 144Hz Esports AMOLED.',
+                word: 'CYBER MECHA',
+                price: '₱15,999.00',
+                link: base + 'catalog.php?q=GT+20+Pro',
+                bgGradient: 'radial-gradient(130% 90% at 50% 28%, #261107 0%, #120904 50%, #050508 100%)',
+                auraColor: 'radial-gradient(circle at 50% 50%, rgba(249, 115, 22, 0.48) 0%, rgba(6, 182, 212, 0.22) 40%, rgba(249, 115, 22, 0.05) 60%, transparent 75%)',
+                dropGlow: 'drop-shadow(0 32px 55px rgba(0, 0, 0, 0.88)) drop-shadow(0 0 40px rgba(249, 115, 22, 0.35))',
+                accentColor: '#fb923c',
+                frames: [
+                    base + 'assets/img/products/showcase_infinix_gt20_1.png',
+                    base + 'assets/img/products/showcase_infinix_gt20_2.png',
+                    base + 'assets/img/products/showcase_infinix_gt20_3.png'
+                ],
+                frameLabels: ['Mecha Silver Chassis', 'RGB Loop Optics', 'Esports Gaming Profile'],
+                specs: [
+                    ['DUAL GAMING CHIP', 'Dimensity 8200 Ultimate + Pixelworks', 'fa-microchip'],
+                    ['ESPORTS DISPLAY', '6.78" 144Hz Bezel-Less AMOLED', 'fa-mobile-screen'],
+                    ['OPTICAL SYSTEM', '108MP OIS Triple Camera + RGB Loop', 'fa-camera-retro'],
+                    ['THERMAL ARCHITECTURE', 'Bypass Charging + VC Liquid Cooling', 'fa-snowflake']
+                ]
+            },
+            {
+                title: 'realme 13 5G',
+                sub: 'Dimensity 6300 5G Speed Chipset, 120Hz Eye Comfort Display & 50MP OIS Camera.',
+                word: 'SPEED WAVE',
+                price: '₱13,999.00',
+                link: base + 'catalog.php?q=Realme+13+5G',
+                bgGradient: 'radial-gradient(130% 90% at 50% 28%, #081d33 0%, #040f1a 50%, #030810 100%)',
+                auraColor: 'radial-gradient(circle at 50% 50%, rgba(56, 189, 248, 0.45) 0%, rgba(59, 130, 246, 0.20) 40%, rgba(56, 189, 248, 0.05) 60%, transparent 75%)',
+                dropGlow: 'drop-shadow(0 32px 55px rgba(0, 0, 0, 0.88)) drop-shadow(0 0 40px rgba(56, 189, 248, 0.35))',
+                accentColor: '#38bdf8',
+                frames: [
+                    base + 'assets/img/products/showcase_realme_13_1.png',
+                    base + 'assets/img/products/showcase_realme_13_2.png',
+                    base + 'assets/img/products/showcase_realme_13_3.png'
+                ],
+                frameLabels: ['Speed Green Full View', 'Speed Wave Island', '120Hz Bezel Profile'],
+                specs: [
+                    ['5G PROCESSOR', 'MediaTek Dimensity 6300 5G Octa-Core', 'fa-microchip'],
+                    ['STABILIZED CAMERA', '50MP OIS Speed-Wave Camera Island', 'fa-camera-retro'],
+                    ['SMOOTH DISPLAY', '120Hz Eye-Comfort FHD+ Display', 'fa-mobile-screen'],
+                    ['FAST CHARGE', '45W SUPERVOOC + 5000mAh Battery', 'fa-bolt']
+                ]
+            }
+        ];
+
+        let activeDev = 0;
+        let lastFrameIdx = 0;
+
+        window.selectScrollyDevice = function (idx, btn) {
+            activeDev = idx;
+            const d = scrollyDevices[idx];
+            const track = document.getElementById('scrollyEntrance');
+            const aura = document.getElementById('scrollyAura');
+            const img = document.getElementById('scrollyPhoneImg');
+
+            if (track) track.style.background = d.bgGradient;
+            if (aura) aura.style.background = d.auraColor;
+            if (img) img.style.filter = d.dropGlow;
+
+            document.getElementById('scrollyTitle').textContent = d.title;
+            document.getElementById('scrollySub').textContent = d.sub;
+            document.getElementById('scrollyBgWord').textContent = d.word;
+            document.getElementById('scrollyPrice').textContent = d.price;
+            document.getElementById('scrollyCtaLink').href = d.link;
+            img.src = d.frames[0];
+            lastFrameIdx = 0;
+
+            for (let i = 0; i < 4; i++) {
+                const pill = document.getElementById('scrollyPill' + (i + 1));
+                const lbl = document.getElementById('sp' + (i + 1) + 'Lbl');
+                const val = document.getElementById('sp' + (i + 1) + 'Val');
+                if (lbl && d.specs[i]) {
+                    lbl.innerHTML = '<i class="fa-solid ' + (d.specs[i][2] || 'fa-check') + ' me-1"></i> ' + d.specs[i][0];
+                    lbl.style.color = d.accentColor;
+                }
+                if (val && d.specs[i]) val.textContent = d.specs[i][1];
+                if (pill) pill.style.borderColor = 'rgba(255, 255, 255, 0.20)';
+            }
+
+            // Rebuild Angle / Colorway Tabs for active phone
+            const tabsContainer = document.getElementById('scrollyAngleTabs');
+            if (tabsContainer) {
+                tabsContainer.innerHTML = '';
+                d.frameLabels.forEach((label, fIdx) => {
+                    const tBtn = document.createElement('button');
+                    tBtn.type = 'button';
+                    tBtn.className = 'scrolly-angle-tab-btn' + (fIdx === 0 ? ' active' : '');
+                    tBtn.textContent = label;
+                    tBtn.onclick = function () { setScrollyFrame(fIdx, this); };
+                    tabsContainer.appendChild(tBtn);
+                });
+            }
+
+            if (btn) {
+                btn.parentElement.querySelectorAll('button').forEach(b => b.classList.remove('active'));
+                btn.classList.add('active');
+            }
+            updateScrollyAnimation();
+        };
+
+        window.setScrollyFrame = function (fIdx, btn) {
+            const d = scrollyDevices[activeDev];
+            if (!d.frames[fIdx]) return;
+            lastFrameIdx = fIdx;
+            const img = document.getElementById('scrollyPhoneImg');
+            if (img) img.src = d.frames[fIdx];
+
+            const tabs = document.getElementById('scrollyAngleTabs');
+            if (tabs) {
+                tabs.querySelectorAll('.scrolly-angle-tab-btn').forEach(b => b.classList.remove('active'));
+                if (btn) btn.classList.add('active');
+            }
+
+            const lbl = document.getElementById('scrollyAngleLabel');
+            if (lbl && d.frameLabels[fIdx]) {
+                lbl.textContent = d.frameLabels[fIdx];
+            }
+        };
+
+        function updateScrollyAnimation() {
+            const track = document.getElementById('scrollyEntrance');
+            const rig = document.getElementById('scrollyPhoneRig');
+            const img = document.getElementById('scrollyPhoneImg');
+            const bgWord = document.getElementById('scrollyBgWord');
+            const prog = document.getElementById('scrollyProgFill');
+            const lbl = document.getElementById('scrollyAngleLabel');
+            if (!track || !rig || !img) return;
+
+            const rect = track.getBoundingClientRect();
+            const scrollable = Math.max(1, track.offsetHeight - window.innerHeight);
+            const p = Math.max(0, Math.min(1, -rect.top / scrollable));
+
+            // Smooth 3D perspective rotation & responsive scale
+            const rotY = (p - 0.5) * 28; // -14deg to +14deg
+            const rotX = Math.sin(p * Math.PI) * 7;
+            const scale = 0.94 + Math.sin(p * Math.PI) * 0.12;
+            rig.style.transform = `rotateY(${rotY.toFixed(2)}deg) rotateX(${rotX.toFixed(2)}deg) scale(${scale.toFixed(3)})`;
+
+            if (bgWord) {
+                const wordY = (0.5 - p) * 90;
+                bgWord.style.transform = `translate(-50%, calc(-50% + ${wordY.toFixed(1)}px)) scale(${(0.95 + p * 0.12).toFixed(3)})`;
+            }
+
+            // Switch frame as user scrolls through fractions
+            const d = scrollyDevices[activeDev];
+            const frameIdx = Math.min(d.frames.length - 1, Math.floor(p * d.frames.length));
+            if (frameIdx !== lastFrameIdx && d.frames[frameIdx]) {
+                lastFrameIdx = frameIdx;
+                img.src = d.frames[frameIdx];
+
+                const tabs = document.getElementById('scrollyAngleTabs');
+                if (tabs) {
+                    const allBtns = tabs.querySelectorAll('.scrolly-angle-tab-btn');
+                    allBtns.forEach((b, i) => b.classList.toggle('active', i === frameIdx));
+                }
+            }
+
+            // Animate floating spec cards
+            [1, 2, 3, 4].forEach((n, i) => {
+                const pill = document.getElementById('scrollyPill' + n);
+                if (!pill) return;
+                const threshold = i * 0.12;
+                const localP = Math.max(0, Math.min(1, (p - threshold) / 0.35));
+                const dir = (n % 2 === 1) ? -1 : 1;
+                const tx = (1 - localP) * 44 * dir;
+                pill.style.opacity = (0.35 + localP * 0.65).toFixed(2);
+                pill.style.transform = `translateX(${tx.toFixed(1)}px) translateY(${((0.5 - p) * 22).toFixed(1)}px)`;
+            });
+
+            if (prog) prog.style.width = Math.round(15 + p * 85) + '%';
+            if (lbl && d.frameLabels[frameIdx]) {
+                lbl.textContent = d.frameLabels[frameIdx];
+            }
+        }
+
+        window.addEventListener('scroll', () => requestAnimationFrame(updateScrollyAnimation), { passive: true });
+        document.addEventListener('DOMContentLoaded', updateScrollyAnimation);
+    })();
+    </script>
+
     <!-- Hero Section with Light Pink Tech Circuit Background -->
     <div class="hero-mesh-pink py-5 position-relative border-bottom" style="color: #2b1120 !important; border-color: #fbcfe8 !important;">
         <div class="container py-4 py-lg-5 position-relative reveal-up" style="z-index: 2;">
@@ -1124,16 +1676,18 @@ try {
                              data-sku="<?= htmlspecialchars($prod['sku']) ?>"
                              data-description="<?= htmlspecialchars($prod['description'] ?? 'Quality cellphone accessory from 8J.') ?>"
                              data-image="<?= htmlspecialchars($prod_img) ?>"
-                             data-ad-hd="<?= htmlspecialchars($ad_vid['hd']) ?>"
-                             data-ad-label="<?= htmlspecialchars($ad_vid['label']) ?>"
+                             data-ad-hd="<?= htmlspecialchars($ad_vid['hd'] ?? '') ?>"
+                             data-ad-label="<?= htmlspecialchars($ad_vid['label'] ?? '') ?>"
                              style="cursor: pointer;">
                             
                             <!-- Hover Progress Countdown Indicator -->
                             <div class="hover-progress-bar"></div>
 
                             <div class="bg-light p-3 text-center position-relative d-flex align-items-center justify-content-center" style="height: 175px; overflow: hidden; background: radial-gradient(circle, #ffffff 55%, #fdf2f8 100%);">
-                                <!-- Outsourced Commercial Video Ad (Streams on Hover, Zero Initial Load) -->
-                                <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($ad_vid['hover']) ?>" data-ad-next="<?= htmlspecialchars($ad_vid['hover_next'] ?? '') ?>"></video>
+                                <?php if (!empty($ad_vid['hover'])): ?>
+                                    <!-- Outsourced Commercial Video Ad (Streams on Hover, Zero Initial Load) -->
+                                    <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($ad_vid['hover']) ?>" data-ad-next="<?= htmlspecialchars($ad_vid['hover_next'] ?? '') ?>"></video>
+                                <?php endif; ?>
 
                                 <?php if (strcasecmp($prod_brand, 'Apple') === 0): ?>
                                     <span class="badge bg-dark text-white position-absolute top-0 start-0 m-2 px-2 py-1 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
@@ -1228,16 +1782,18 @@ try {
                              data-formatted-price="<?= format_currency($unit['selling_price']) ?>"
                              data-notes="<?= htmlspecialchars($unit['notes'] ?? 'Certified phone unit from 8J, fully inspected and tested.') ?>"
                              data-image="<?= htmlspecialchars($unit_img) ?>"
-                             data-ad-hd="<?= htmlspecialchars($u_ad_vid['hd']) ?>"
-                             data-ad-label="<?= htmlspecialchars($u_ad_vid['label']) ?>"
+                             data-ad-hd="<?= htmlspecialchars($u_ad_vid['hd'] ?? '') ?>"
+                             data-ad-label="<?= htmlspecialchars($u_ad_vid['label'] ?? '') ?>"
                              style="cursor: pointer;">
                             
                             <!-- Hover Progress Countdown Indicator -->
                             <div class="hover-progress-bar"></div>
 
                             <div class="bg-light p-3 text-center position-relative d-flex align-items-center justify-content-center" style="height: 180px; overflow: hidden; background: radial-gradient(circle, #ffffff 55%, #fdf2f8 100%);">
-                                <!-- Outsourced Commercial Video Ad (Streams on Hover, Zero Initial Load) -->
-                                <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($u_ad_vid['hover']) ?>" data-ad-next="<?= htmlspecialchars($u_ad_vid['hover_next'] ?? '') ?>"></video>
+                                <?php if (!empty($u_ad_vid['hover'])): ?>
+                                    <!-- Outsourced Commercial Video Ad (Streams on Hover, Zero Initial Load) -->
+                                    <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($u_ad_vid['hover']) ?>" data-ad-next="<?= htmlspecialchars($u_ad_vid['hover_next'] ?? '') ?>"></video>
+                                <?php endif; ?>
 
                                 <?php if (strcasecmp($unit['brand'], 'Apple') === 0): ?>
                                     <span class="badge bg-dark text-white position-absolute top-0 start-0 m-2 px-2.5 py-1 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
@@ -1501,7 +2057,7 @@ try {
             </div>
 
             <!-- Right: Interactive FAQ Accordion -->
-            <div class="col-lg-7">
+            <div class="col-lg-7" id="faqSection">
                 <div class="bento-card h-100 p-4 p-xl-5">
                     <div class="mb-4">
                         <span class="badge bg-light text-dark border px-3 py-1 rounded-pill fw-bold text-uppercase" style="font-size: 0.72rem; letter-spacing: 0.5px;">
@@ -1755,8 +2311,8 @@ try {
                             <button id="modalPhoneReserveBtn" class="btn btn-primary rounded-pill px-4 flex-grow-1 fw-bold d-flex align-items-center justify-content-center gap-2 shadow-sm py-2">
                                 <i class="fa-solid fa-cart-arrow-down"></i> Reserve for Pick-Up
                             </button>
-                            <a href="<?= BASE_URL ?>admin/trading.php" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.85rem;">
-                                <i class="fa-solid fa-arrows-rotate text-primary"></i> Trade-In Swap
+                            <a href="#faqSection" class="btn btn-outline-dark rounded-pill px-3 py-2 fw-semibold d-inline-flex align-items-center gap-1" style="font-size: 0.85rem;" data-bs-dismiss="modal" onclick="setTimeout(function(){ var f = document.getElementById('faqCol1'); if (f && window.bootstrap) { new bootstrap.Collapse(f, {show:true}); } }, 350);">
+                                <i class="fa-solid fa-arrows-rotate text-primary"></i> Trade-In Swap Info
                             </a>
                         </div>
                         <div class="mt-3 pt-2 border-top">

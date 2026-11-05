@@ -5,6 +5,14 @@
  */
 
 if (session_status() === PHP_SESSION_NONE) {
+    session_set_cookie_params([
+        'lifetime' => 0,
+        'path' => '/',
+        'domain' => '',
+        'secure' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off'),
+        'httponly' => true,
+        'samesite' => 'Lax'
+    ]);
     session_start();
 }
 
@@ -150,93 +158,202 @@ function audit_log($action, $module, $details = '') {
  * matched to the product or smartphone model. Zero local storage footprint.
  */
 function get_product_ad_video($name, $brand = '') {
-    $hay = strtolower($name . ' ' . $brand);
+    $n = strtolower(trim((string)$name));
+    $b = strtolower(trim((string)$brand));
+    $hay = $b . ' ' . $n;
 
-    // 1. iPhone 15 Pro Max
-    if (strpos($hay, '15 pro max') !== false) {
+    // 1. HONOR (Official Global Launch & Introduction Films)
+    if ($b === 'honor' || strpos($hay, 'honor') !== false) {
+        if (strpos($n, '200') !== false) {
+            return [
+                'type'        => 'youtube',
+                'youtube_id'  => 'HzjJa9fqqC8',
+                'hd'          => 'https://www.youtube-nocookie.com/embed/HzjJa9fqqC8?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+                'hover'       => '',
+                'label'       => 'HONOR 200 5G • Studio Harcourt Portrait Master Film'
+            ];
+        }
+        if (strpos($n, 'x9b') !== false || strpos($n, 'x9c') !== false || strpos($n, 'x9') !== false) {
+            return [
+                'type'        => 'youtube',
+                'youtube_id'  => 'GhF1yXpbeU8',
+                'hd'          => 'https://www.youtube-nocookie.com/embed/GhF1yXpbeU8?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+                'hover'       => '',
+                'label'       => 'HONOR X9 Series • All-Angle Ultra Tough Film'
+            ];
+        }
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/large.mp4',
-            'label'      => 'iPhone 15 Pro Max • Titanium Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'HzjJa9fqqC8',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/HzjJa9fqqC8?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'HONOR Official Flagship Commercial'
         ];
     }
 
-    // 2. iPhone 15 Pro (or iPhone 15 Pro Clear Case)
-    if (strpos($hay, '15 pro') !== false && strpos($hay, 'case') === false) {
+    // 2. INFINIX (Official Gaming & Hardware Launch Films)
+    if ($b === 'infinix' || strpos($hay, 'infinix') !== false) {
+        if (strpos($n, 'gt 20') !== false || strpos($n, 'gt 10') !== false || strpos($n, 'gt') !== false) {
+            return [
+                'type'        => 'youtube',
+                'youtube_id'  => 'FAH0ZtCh1ls',
+                'hd'          => 'https://www.youtube-nocookie.com/embed/FAH0ZtCh1ls?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+                'hover'       => '',
+                'label'       => 'Infinix GT 20 Pro • Official Esports Gaming Film'
+            ];
+        }
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/large.mp4',
-            'label'      => 'iPhone 15 Pro • Aerospace Titanium Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'Kjm-TnAQf_I',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/Kjm-TnAQf_I?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'Infinix Official Hardware Film'
         ];
     }
 
-    // 3. iPhone 15 / Cases / Action Button
-    if (strpos($hay, 'iphone 15') !== false || strpos($hay, 'case') !== false || strpos($hay, 'shockproof') !== false || strpos($hay, 'glass') !== false) {
+    // 3. REALME (Official Launch Films)
+    if ($b === 'realme' || strpos($hay, 'realme') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/large.mp4',
-            'label'      => 'Precision Design & Protection Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'k9WvfT-VFmQ',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/k9WvfT-VFmQ?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'realme 13 Series 5G • Official Film'
         ];
     }
 
-    // 4. iPhone 14 Pro / iPhone 14
-    if (strpos($hay, 'iphone 14') !== false) {
+    // 4. SAMSUNG GALAXY (Official Commercials)
+    if ($b === 'samsung' || strpos($hay, 'samsung') !== false || strpos($n, 'galaxy') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/large.mp4',
-            'label'      => 'iPhone 14 Series • Dynamic Island Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'iNeKOMMZYRw',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/iNeKOMMZYRw?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'Samsung Galaxy • Official Commercial'
         ];
     }
 
-    // 5. iPhone 13 Pro / iPhone 13
-    if (strpos($hay, 'iphone 13') !== false) {
+    // 5. XIAOMI / REDMI (Official Commercials)
+    if ($b === 'xiaomi' || strpos($hay, 'xiaomi') !== false || strpos($n, 'redmi') !== false || strpos($n, 'poco') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/large.mp4',
-            'label'      => 'iPhone 13 Series • ProMotion Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'l54w5Igi95U',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/l54w5Igi95U?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'Redmi Note 12 Series • Official Film'
         ];
     }
 
-    // 6. AirPods / Earbuds / Earphones / Audio
-    if (strpos($hay, 'airpods') !== false || strpos($hay, 'earphone') !== false || strpos($hay, 'earbud') !== false || strpos($hay, 'audio') !== false || strpos($hay, 'headphone') !== false) {
+    // 6. OPPO (Official Commercials)
+    if ($b === 'oppo' || strpos($hay, 'oppo') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/spatial-audio/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/spatial-audio/large.mp4',
-            'label'      => 'Spatial Audio & ANC Commercial'
+            'type'        => 'youtube',
+            'youtube_id'  => 'OLFZRXJF-fE',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/OLFZRXJF-fE?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'OPPO Reno Series • Official Film'
         ];
     }
 
-    // 7. MagSafe Charger / Cables / Chargers
-    if (strpos($hay, 'magsafe') !== false && strpos($hay, 'battery') === false || strpos($hay, 'charger') !== false || strpos($hay, 'cable') !== false) {
+    // 7. ITEL / TECHLIFE (Official Commercials)
+    if ($b === 'itel' || strpos($hay, 'itel') !== false || $b === 'techlife' || strpos($hay, 'techlife') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/battery/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/large.mp4',
-            'label'      => 'MagSafe & Fast Charging Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'KBSTju7uHjY',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/KBSTju7uHjY?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'itel Mobile • Official Commercial'
         ];
     }
 
-    // 8. Power Banks / Battery Pack / Apple Watch Ultra
-    if (strpos($hay, 'powerbank') !== false || strpos($hay, 'power bank') !== false || strpos($hay, 'battery') !== false || strpos($hay, 'watch') !== false) {
+    // 8. LENOVO AUDIO (Thinkplus TWS Showcase)
+    if (strpos($hay, 'lenovo') !== false || strpos($hay, 'lp40') !== false || strpos($hay, 'gm2') !== false) {
         return [
-            'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/battery/medium.mp4',
-            'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/medium.mp4',
-            'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/battery/large.mp4',
-            'label'      => 'All-Day High-Endurance Power Ad'
+            'type'        => 'youtube',
+            'youtube_id'  => 'Aww_2uRovR4',
+            'hd'          => 'https://www.youtube-nocookie.com/embed/Aww_2uRovR4?autoplay=1&mute=0&controls=1&rel=0&modestbranding=1',
+            'hover'       => '',
+            'label'       => 'Lenovo Thinkplus TWS Earbuds • Showcase'
         ];
     }
 
-    // 9. iPhone 12 / iPhone 11 / Other Smartphones & Default
-    return [
-        'hover'      => 'https://www.apple.com/105/media/us/iphone-12-pro/2020/e70ffbd8-50f1-40f3-ac36-0f03a15ac314/anim/hero/small.mp4',
-        'hover_next' => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/medium.mp4',
-        'hd'         => 'https://www.apple.com/105/media/us/iphone-12-pro/2020/e70ffbd8-50f1-40f3-ac36-0f03a15ac314/anim/hero/large.mp4',
-        'label'      => 'Flagship Smartphone Commercial'
-    ];
+    // 9. APPLE IPHONES & APPLE CERTIFIED ACCESSORIES ONLY
+    $isApple = ($b === 'apple' || strpos($hay, 'iphone') !== false || strpos($hay, 'airpods') !== false || strpos($hay, 'magsafe') !== false || strpos($hay, 'apple watch') !== false);
+
+    if ($isApple) {
+        if (strpos($n, '15 pro max') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/large.mp4',
+                'label'      => 'iPhone 15 Pro Max • Titanium Ad'
+            ];
+        }
+        if (strpos($n, '15 pro') !== false && strpos($n, 'case') === false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/titanium/large.mp4',
+                'label'      => 'iPhone 15 Pro • Aerospace Titanium Ad'
+            ];
+        }
+        if (strpos($n, 'iphone 15') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/hero/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/large.mp4',
+                'label'      => 'iPhone 15 Series • Precision Design Ad'
+            ];
+        }
+        if (strpos($n, 'iphone 14') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/action-button/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/large.mp4',
+                'label'      => 'iPhone 14 Series • Dynamic Island Ad'
+            ];
+        }
+        if (strpos($n, 'iphone 13') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-14-pro/2023/b094f6e4-dcdb-494f-bd72-45d659126dcd/anim/hero/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/large.mp4',
+                'label'      => 'iPhone 13 Series • ProMotion Ad'
+            ];
+        }
+        if (strpos($n, 'airpods') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/spatial-audio/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/spatial-audio/large.mp4',
+                'label'      => 'Apple AirPods Pro • Spatial Audio Ad'
+            ];
+        }
+        if (strpos($n, 'magsafe') !== false) {
+            return [
+                'type'       => 'mp4',
+                'hover'      => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/medium.mp4',
+                'hover_next' => 'https://www.apple.com/105/media/us/iphone-15-pro/2023/2f337511-a940-4b57-b89c-1512b7507777/anim/battery/medium.mp4',
+                'hd'         => 'https://www.apple.com/105/media/us/airpods-pro/2022/d2deeb8e-83eb-48ea-9721-f567cf0fffa8/anim/case/large.mp4',
+                'label'      => 'Apple MagSafe Ecosystem Ad'
+            ];
+        }
+        // iPhone 12, 11, Apple Watch, etc.
+        return [
+            'type'       => 'mp4',
+            'hover'      => 'https://www.apple.com/105/media/us/iphone-12-pro/2020/e70ffbd8-50f1-40f3-ac36-0f03a15ac314/anim/hero/small.mp4',
+            'hover_next' => 'https://www.apple.com/105/media/us/iphone-13-pro/2021/404b23a8-f9c5-466c-b0e6-3d36705b959d/anim/hero/medium.mp4',
+            'hd'         => 'https://www.apple.com/105/media/us/iphone-12-pro/2020/e70ffbd8-50f1-40f3-ac36-0f03a15ac314/anim/hero/large.mp4',
+            'label'      => 'iPhone Official Commercial'
+        ];
+    }
+
+    // 10. Default: Return null for generic unverified accessories (never show an Apple ad on an unmapped item!)
+    return null;
 }

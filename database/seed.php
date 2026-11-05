@@ -9,10 +9,11 @@ require_once __DIR__ . '/../config/db.php';
 try {
     // 1. Create Default Users (admin, staff, tech, customer)
     $password_hash = password_hash('password123', PASSWORD_DEFAULT);
+    $admin_password_hash = password_hash('admin123', PASSWORD_DEFAULT);
     
     $users = [
-        ['Johanne Gabriel (Admin)', 'admin@8jcellphone.com', 'admin', $password_hash, 'admin', '09171234567', 'Tanauan City, Batangas'],
-        ['Gigi Genil (Manager)', 'gigi@8jcellphone.com', 'manager', $password_hash, 'admin', '09181234567', 'Tanauan City, Batangas'],
+        ['Johanne Gabriel (Admin)', 'admin@8jcellphone.com', 'admin', $admin_password_hash, 'admin', '09171234567', 'Tanauan City, Batangas'],
+        ['Gigi Genil (Manager)', 'gigi@8jcellphone.com', 'manager', $admin_password_hash, 'admin', '09181234567', 'Tanauan City, Batangas'],
         ['Mark Cashier', 'cashier@8jcellphone.com', 'staff', $password_hash, 'staff', '09191234567', 'Tanauan City, Batangas'],
         ['Dave Technician', 'tech@8jcellphone.com', 'tech', $password_hash, 'technician', '09201234567', 'Tanauan City, Batangas'],
         ['Juan Dela Cruz', 'customer@gmail.com', 'customer', $password_hash, 'customer', '09211234567', 'Brgy. Darasa, Tanauan City']
@@ -112,7 +113,8 @@ try {
     echo "<h3>✅ Database Seeded Successfully!</h3>";
     echo "<p>Default login accounts created:</p>";
     echo "<ul>
-            <li><strong>Admin:</strong> username: <code>admin</code> | password: <code>password123</code></li>
+            <li><strong>Admin:</strong> username: <code>admin</code> | password: <code>admin123</code></li>
+            <li><strong>Manager:</strong> username: <code>manager</code> | password: <code>admin123</code></li>
             <li><strong>Staff:</strong> username: <code>staff</code> | password: <code>password123</code></li>
             <li><strong>Technician:</strong> username: <code>tech</code> | password: <code>password123</code></li>
             <li><strong>Customer:</strong> username: <code>customer</code> | password: <code>password123</code></li>

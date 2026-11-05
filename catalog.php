@@ -1,6 +1,7 @@
 <?php
 $page_title = "Online Catalog - Accessories & Phones";
 require_once __DIR__ . '/includes/header.php';
+require_once __DIR__ . '/includes/product_specs.php';
 
 $type_filter = sanitize($_GET['type'] ?? 'all');
 $cat_filter = (int)($_GET['category'] ?? 0);
@@ -9,8 +10,8 @@ $search = sanitize($_GET['q'] ?? '');
 // Fetch Categories
 $categories = $pdo->query("SELECT * FROM categories WHERE type = 'accessory'")->fetchAll();
 
-// Products Query
-$p_sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status != 'archived'";
+// Products Query (Accessories Only)
+$p_sql = "SELECT p.*, c.name as category_name FROM products p LEFT JOIN categories c ON p.category_id = c.id WHERE p.status != 'archived' AND (p.sku LIKE 'ACC-%' OR p.category_id != 6)";
 if ($cat_filter > 0) {
     $p_sql .= " AND p.category_id = {$cat_filter}";
 }
@@ -20,12 +21,15 @@ if (!empty($search)) {
 $p_sql .= " ORDER BY (p.brand = 'Apple') DESC, p.id DESC";
 $products = $pdo->query($p_sql)->fetchAll();
 
-// Phone Units Query
-$u_sql = "SELECT * FROM phone_units WHERE status = 'in_stock'";
+// Phone Units Query (Deduplicated by Model + Storage + Color with live stock count)
+$u_sql = "SELECT MIN(id) as id, brand, model_name, storage_capacity, color, unit_condition, battery_health, selling_price, status, image, notes, COUNT(*) as stock_count
+          FROM phone_units
+          WHERE status = 'in_stock'";
 if (!empty($search)) {
     $u_sql .= " AND (brand LIKE " . $pdo->quote("%{$search}%") . " OR model_name LIKE " . $pdo->quote("%{$search}%") . " OR color LIKE " . $pdo->quote("%{$search}%") . " OR storage_capacity LIKE " . $pdo->quote("%{$search}%") . ")";
 }
-$u_sql .= " ORDER BY (brand = 'Apple') DESC, id DESC";
+$u_sql .= " GROUP BY brand, model_name, storage_capacity, color
+            ORDER BY FIELD(brand, 'Apple', 'Honor', 'Infinix', 'Realme', 'Oppo', 'Itel', 'TechLife', 'Samsung', 'Xiaomi') ASC, selling_price DESC";
 $phone_units = $pdo->query($u_sql)->fetchAll();
 ?>
 
@@ -100,14 +104,26 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
             <a href="<?= BASE_URL ?>catalog.php?q=Apple" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Apple') === 0) ? 'btn-primary' : 'btn-outline-primary' ?>" style="font-size: 0.78rem;">
                 <i class="fa-brands fa-apple me-1"></i> Apple / iPhone
             </a>
-            <a href="<?= BASE_URL ?>catalog.php?q=Samsung" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Samsung') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
-                Samsung
-            </a>
             <a href="<?= BASE_URL ?>catalog.php?q=Infinix" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Infinix') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
                 Infinix
             </a>
-            <a href="<?= BASE_URL ?>catalog.php?q=Tecno" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Tecno') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
-                Tecno
+            <a href="<?= BASE_URL ?>catalog.php?q=Honor" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Honor') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                Honor
+            </a>
+            <a href="<?= BASE_URL ?>catalog.php?q=Realme" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Realme') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                Realme
+            </a>
+            <a href="<?= BASE_URL ?>catalog.php?q=Oppo" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Oppo') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                Oppo
+            </a>
+            <a href="<?= BASE_URL ?>catalog.php?q=Itel" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Itel') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                Itel
+            </a>
+            <a href="<?= BASE_URL ?>catalog.php?q=TechLife" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'TechLife') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                TechLife
+            </a>
+            <a href="<?= BASE_URL ?>catalog.php?q=Samsung" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Samsung') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
+                Samsung
             </a>
             <a href="<?= BASE_URL ?>catalog.php?q=Xiaomi" class="btn btn-sm rounded-pill px-3 <?= (strcasecmp($search, 'Xiaomi') === 0) ? 'btn-primary' : 'btn-outline-secondary' ?>" style="font-size: 0.78rem;">
                 Xiaomi
@@ -144,8 +160,10 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                              data-order="<?= $idx ?>">
                             <div class="card h-100 card-custom stat-card overflow-hidden">
                                 <a href="<?= BASE_URL ?>product_detail.php?id=<?= $p['id'] ?>" class="bg-light p-3 text-center position-relative d-flex align-items-center justify-content-center text-decoration-none overflow-hidden" style="height: 165px; background: radial-gradient(circle, #ffffff 55%, #fdf2f8 100%);">
-                                    <!-- Outsourced Commercial Video Ad (Streams on Hover) -->
-                                    <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($p_ad['hover']) ?>" data-ad-next="<?= htmlspecialchars($p_ad['hover_next'] ?? '') ?>"></video>
+                                    <?php if (!empty($p_ad['hover'])): ?>
+                                        <!-- Outsourced Commercial Video Ad (Streams on Hover) -->
+                                        <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($p_ad['hover']) ?>" data-ad-next="<?= htmlspecialchars($p_ad['hover_next'] ?? '') ?>"></video>
+                                    <?php endif; ?>
 
                                     <?php if (strcasecmp($p_brand, 'Apple') === 0): ?>
                                         <span class="badge bg-dark text-white position-absolute top-0 start-0 m-2 px-2 py-1 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
@@ -155,6 +173,15 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                                     <span class="badge bg-success-subtle text-success border border-success-subtle position-absolute top-0 end-0 m-2 px-2 py-0.5 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
                                         <?= (int)$p['stock_quantity'] ?> in stock
                                     </span>
+                                    <?php if (has_online_3d_model($p['name'], $p_brand)): ?>
+                                        <span class="badge bg-dark text-white position-absolute bottom-0 start-0 m-2 px-2 py-0.5 rounded-pill shadow-xs" style="font-size: 0.62rem; z-index: 4; border: 1px solid rgba(56,189,248,0.4);">
+                                            <i class="fa-solid fa-cube text-info me-1"></i>3D Model
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-white text-muted border position-absolute bottom-0 start-0 m-2 px-2 py-0.5 rounded-pill shadow-xs" style="font-size: 0.60rem; z-index: 4; opacity: 0.85;">
+                                            <i class="fa-solid fa-cube opacity-40 me-1"></i>3D N/A
+                                        </span>
+                                    <?php endif; ?>
                                     <?php if (!empty($p_img)): ?>
                                         <img src="<?= $p_img ?>" alt="<?= htmlspecialchars($p['name']) ?>" loading="lazy" decoding="async" class="product-thumb" style="max-height: 130px; max-width: 100%; object-fit: contain; transition: transform 0.3s ease, opacity 0.3s ease; filter: drop-shadow(0 8px 14px rgba(0,0,0,0.08));">
                                     <?php else: ?>
@@ -219,12 +246,30 @@ $phone_units = $pdo->query($u_sql)->fetchAll();
                              data-order="<?= $idx ?>">
                             <div class="card h-100 card-custom stat-card border overflow-hidden">
                                 <a href="<?= BASE_URL ?>product_detail.php?type=unit&id=<?= $u['id'] ?>" class="bg-light p-3 text-center position-relative d-flex align-items-center justify-content-center text-decoration-none overflow-hidden" style="height: 175px; background: radial-gradient(circle, #ffffff 55%, #fdf2f8 100%);">
-                                    <!-- Outsourced Commercial Video Ad (Streams on Hover) -->
-                                    <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($u_ad['hover']) ?>" data-ad-next="<?= htmlspecialchars($u_ad['hover_next'] ?? '') ?>"></video>
+                                    <?php if (!empty($u_ad['hover'])): ?>
+                                        <!-- Outsourced Commercial Video Ad (Streams on Hover) -->
+                                        <video class="product-hover-video" muted playsinline preload="none" data-ad-src="<?= htmlspecialchars($u_ad['hover']) ?>" data-ad-next="<?= htmlspecialchars($u_ad['hover_next'] ?? '') ?>"></video>
+                                    <?php endif; ?>
 
                                     <?php if (strcasecmp($u['brand'], 'Apple') === 0): ?>
                                         <span class="badge bg-dark text-white position-absolute top-0 start-0 m-2 px-2.5 py-1 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
                                             <i class="fa-brands fa-apple me-1"></i>iPhone
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-dark text-white position-absolute top-0 start-0 m-2 px-2.5 py-1 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
+                                            <?= htmlspecialchars($u['brand']) ?>
+                                        </span>
+                                    <?php endif; ?>
+                                    <span class="badge bg-success-subtle text-success border border-success-subtle position-absolute top-0 end-0 m-2 px-2 py-0.5 rounded-pill" style="font-size: 0.65rem; z-index: 4;">
+                                        <?= (int)($u['stock_count'] ?? 1) ?> in stock
+                                    </span>
+                                    <?php if (has_online_3d_model($u['model_name'], $u['brand'])): ?>
+                                        <span class="badge bg-dark text-white position-absolute bottom-0 start-0 m-2 px-2 py-0.5 rounded-pill shadow-xs" style="font-size: 0.62rem; z-index: 4; border: 1px solid rgba(56,189,248,0.4);">
+                                            <i class="fa-solid fa-cube text-info me-1"></i>3D Model
+                                        </span>
+                                    <?php else: ?>
+                                        <span class="badge bg-white text-muted border position-absolute bottom-0 start-0 m-2 px-2 py-0.5 rounded-pill shadow-xs" style="font-size: 0.60rem; z-index: 4; opacity: 0.85;">
+                                            <i class="fa-solid fa-cube opacity-40 me-1"></i>3D N/A
                                         </span>
                                     <?php endif; ?>
                                     <?php if (!empty($u_img)): ?>
