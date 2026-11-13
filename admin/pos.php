@@ -1,6 +1,7 @@
 <?php
 $page_title = "POS & Billing Cashier";
 require_once __DIR__ . '/../config/db.php';
+require_once __DIR__ . '/../includes/order_helpers.php';
 require_role('admin', 'staff');
 
 $message = '';
@@ -34,31 +35,46 @@ $categories = $pdo->query("
 ")->fetchAll();
 
 // Fetch customer accounts for quick customer picker
-$customer_list = $pdo->query("SELECT id, fullname, contact_number FROM users WHERE role = 'customer' ORDER BY fullname ASC LIMIT 30")->fetchAll();
+// (was LIMIT 30, which hid every customer after the 30th name alphabetically)
+$customer_list = $pdo->query("SELECT id, fullname, contact_number FROM users WHERE role = 'customer' AND status = 'active' ORDER BY fullname ASC LIMIT 1000")->fetchAll();
 
 // Handle Checkout Submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'pos_checkout') {
-    $customer_name = sanitize($_POST['customer_name'] ?? 'Walk-in Customer');
+    $customer_name = sanitize($_POST['customer_name'] ?? '') ?: 'Walk-in Customer';
     $customer_id = (int)($_POST['customer_id'] ?? 0) ?: null;
-    $subtotal = (float)($_POST['subtotal'] ?? 0);
-    $discount = (float)($_POST['discount'] ?? 0);
-    $total_amount = (float)($_POST['total_amount'] ?? 0);
+    $discount_req = max(0, (float)($_POST['discount'] ?? 0));
     $amount_tendered = (float)($_POST['amount_tendered'] ?? 0);
-    $payment_method = sanitize($_POST['payment_method'] ?? 'cash');
-    $payment_ref = sanitize($_POST['payment_reference'] ?? '');
-    $cart_items_json = $_POST['cart_items'] ?? '[]';
-    $cart_items = json_decode($cart_items_json, true) ?: [];
+    $payment_method = $_POST['payment_method'] ?? 'cash';
+    if (!in_array($payment_method, ['cash', 'gcash', 'card', 'split'], true)) $payment_method = 'cash';
+    $payment_ref = mb_substr(sanitize($_POST['payment_reference'] ?? ''), 0, 80);
+    $cart_items = json_decode($_POST['cart_items'] ?? '[]', true);
+    $cart_items = is_array($cart_items) ? $cart_items : [];
 
     if (empty($cart_items)) {
         $message = "Error: Cart cannot be empty!";
-    } elseif ($amount_tendered < $total_amount) {
-        $message = "Error: Amount tendered (₱" . number_format($amount_tendered, 2) . ") is less than Total Due (₱" . number_format($total_amount, 2) . ")!";
     } else {
         try {
             $pdo->beginTransaction();
 
-            $change_due = max(0, $amount_tendered - $total_amount);
-            $invoice_no = '8J-INV-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(2)));
+            // Re-price from the database and lock the rows, so stock can't be oversold
+            // and the same phone can't be sold twice by two cashiers at once
+            $priced = price_cart($pdo, $cart_items, true);
+            if ($priced['errors'] || !$priced['items']) {
+                throw new StockChangedException(implode(' ', array_unique($priced['errors'])) ?: 'The bill is empty.');
+            }
+            $subtotal = $priced['total'];
+            $discount = round(min($discount_req, $subtotal), 2);
+            $total_amount = round($subtotal - $discount, 2);
+
+            // Card / GCash are charged the exact amount; only cash gives change
+            if ($payment_method !== 'cash' && $amount_tendered <= 0) $amount_tendered = $total_amount;
+            if ($amount_tendered + 0.009 < $total_amount) {
+                throw new StockChangedException("Amount tendered (" . format_currency($amount_tendered) . ") is less than the total due (" . format_currency($total_amount) . ").");
+            }
+            $cart_items = array_map(fn($i) => ['type' => $i['type'], 'id' => $i['id'], 'name' => $i['name'], 'price' => $i['unit_price'], 'quantity' => $i['quantity']], $priced['items']);
+
+            $change_due = $payment_method === 'cash' ? round(max(0, $amount_tendered - $total_amount), 2) : 0.0;
+            $invoice_no = '8J-INV-' . date('Ymd') . '-' . strtoupper(bin2hex(random_bytes(3)));
 
             // 1. Insert into sales
             $cashier_id = !empty($current_user['id']) ? $current_user['id'] : ($_SESSION['user']['id'] ?? 1);
@@ -81,20 +97,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             ");
 
             $items_summary = [];
+            $upd_stock = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity - ? WHERE id = ? AND stock_quantity >= ?");
+            $upd_phone = $pdo->prepare("UPDATE phone_units SET status = 'sold' WHERE id = ? AND status = 'in_stock'");
             foreach ($cart_items as $item) {
                 if ($item['type'] === 'product') {
-                    $item_stmt->execute([$sale_id, 'product', $item['id'], null, $item['name'], $item['price'], $item['quantity'], $item['price'] * $item['quantity']]);
-                    // Deduct stock safely
-                    $upd_stock = $pdo->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity - ?) WHERE id = ?");
-                    $upd_stock->execute([$item['quantity'], $item['id']]);
+                    $item_stmt->execute([$sale_id, 'product', $item['id'], null, $item['name'], $item['price'], $item['quantity'], round($item['price'] * $item['quantity'], 2)]);
+                    $upd_stock->execute([$item['quantity'], $item['id'], $item['quantity']]);
+                    if ($upd_stock->rowCount() !== 1) throw new StockChangedException("Not enough stock left for {$item['name']}.");
                     $items_summary[] = "{$item['quantity']}x {$item['name']}";
                 } elseif ($item['type'] === 'phone_unit') {
                     $item_stmt->execute([$sale_id, 'phone_unit', null, $item['id'], $item['name'], $item['price'], 1, $item['price']]);
-                    // Mark phone unit as sold
-                    $upd_phone = $pdo->prepare("UPDATE phone_units SET status = 'sold' WHERE id = ?");
                     $upd_phone->execute([$item['id']]);
+                    if ($upd_phone->rowCount() !== 1) throw new StockChangedException("{$item['name']} was already sold or reserved.");
                     $items_summary[] = "1x Phone Unit ({$item['name']})";
                 }
+            }
+            if ($discount > 0) {
+                $items_summary[] = "discount " . format_currency($discount);
             }
 
             audit_log('POS Sale Completed', 'POS', "Invoice {$invoice_no}: Total ₱" . number_format($total_amount, 2) . " via " . strtoupper($payment_method) . " (" . implode(', ', array_slice($items_summary, 0, 3)) . ")");
@@ -129,9 +148,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 ORDER BY brand ASC, model_name ASC
             ")->fetchAll();
 
+        } catch (StockChangedException $e) {
+            if ($pdo->inTransaction()) $pdo->rollBack();
+            $message = "Error: " . $e->getMessage() . " Nothing was charged. Please refresh the bill and try again.";
         } catch (Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            $message = "Checkout error: " . $e->getMessage();
+            error_log('POS checkout error: ' . $e->getMessage());
+            $message = "Error: The sale could not be saved. Nothing was charged. Please try again.";
         }
     }
 }

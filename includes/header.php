@@ -355,7 +355,28 @@ $current_page = basename($_SERVER['PHP_SELF']);
                 <span class="navbar-toggler-icon"></span>
             </button>
 
+            <?php $admin_area = is_staff() && strpos(str_replace('\\', '/', $_SERVER['PHP_SELF'] ?? ''), '/admin/') !== false; ?>
             <div class="collapse navbar-collapse" id="topNav">
+                <?php if ($admin_area): ?>
+                <!-- Staff working in the management area: no shopping menu, just a way back to the dashboard and the live store -->
+                <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-3 gap-xl-1">
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'index.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>admin/index.php">
+                            <i class="fa-solid fa-gauge-high me-1 text-primary" style="font-size: 0.85rem;"></i> Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3" href="<?= BASE_URL ?>" target="_blank" rel="noopener">
+                            <i class="fa-solid fa-store me-1 text-primary" style="font-size: 0.85rem;"></i> View store <i class="fa-solid fa-arrow-up-right-from-square ms-1" style="font-size: 0.65rem;"></i>
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link rounded-pill px-3 <?= $current_page == 'help.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>admin/help.php">
+                            <i class="fa-solid fa-circle-question me-1 text-primary" style="font-size: 0.85rem;"></i> Help
+                        </a>
+                    </li>
+                </ul>
+                <?php else: ?>
                 <ul class="navbar-nav me-auto mb-2 mb-xl-0 ms-xl-3 gap-xl-1">
                     <li class="nav-item">
                         <a class="nav-link rounded-pill px-3 <?= $current_page == 'index.php' ? 'active fw-bold bg-light' : '' ?>" href="<?= BASE_URL ?>">
@@ -388,8 +409,10 @@ $current_page = basename($_SERVER['PHP_SELF']);
                         <input type="text" name="q" id="globalNavSearch" class="form-control border-0 bg-transparent shadow-none small" placeholder="Search iPhone, AirPods... (/)" style="font-size: 0.8rem;" value="<?= isset($_GET['q']) ? htmlspecialchars($_GET['q']) : '' ?>">
                     </div>
                 </form>
+                <?php endif; ?>
 
                 <ul class="navbar-nav ms-auto align-items-xl-center gap-2 nav-actions">
+                    <?php if (!$admin_area): ?>
                     <li class="nav-item d-none d-xxl-block nav-counter-badge">
                         <span class="badge bg-light text-dark border rounded-pill px-3 py-1.5 small d-inline-flex align-items-center gap-1" style="font-size: 0.74rem;">
                             <span class="pulse-indicator green"></span> Counter Open • 1-Hr Pick-Up
@@ -406,6 +429,7 @@ $current_page = basename($_SERVER['PHP_SELF']);
                             <span id="cart-counter" class="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger" style="display:none;">0</span>
                         </a>
                     </li>
+                    <?php endif; ?>
                     
                     <?php if (is_logged_in()): ?>
                         <li class="nav-item dropdown ms-xl-2">

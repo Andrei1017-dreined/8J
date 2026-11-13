@@ -8,8 +8,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $username = trim($_POST['username'] ?? '');
     $password = trim($_POST['password'] ?? '');
 
+    $ip = $_SERVER['REMOTE_ADDR'] ?? 'unknown';
+
+    // Brute-force protection: 5 failed tries per account, or 20 per IP, in 15 minutes
+    $locked = false;
+    try {
+        $pdo->exec("DELETE FROM login_attempts WHERE attempted_at < NOW() - INTERVAL 1 DAY");
+        $q = $pdo->prepare("SELECT
+                (SELECT COUNT(*) FROM login_attempts WHERE username = ? AND attempted_at > NOW() - INTERVAL 15 MINUTE),
+                (SELECT COUNT(*) FROM login_attempts WHERE ip_address = ? AND attempted_at > NOW() - INTERVAL 15 MINUTE)");
+        $q->execute([strtolower($username), $ip]);
+        [$user_fails, $ip_fails] = $q->fetch(PDO::FETCH_NUM);
+        $locked = ($username !== '' && $user_fails >= 5) || $ip_fails >= 20;
+    } catch (Exception $e) {
+        // If the table is missing, carry on without the limit
+    }
+
     if (empty($username) || empty($password)) {
         $error = "Please fill in all fields.";
+    } elseif ($locked) {
+        $error = "Too many failed sign-in attempts. Please wait 15 minutes and try again.";
     } else {
         try {
             $stmt = $pdo->prepare("SELECT * FROM users WHERE (username = ? OR email = ?) AND status = 'active' LIMIT 1");
@@ -17,6 +35,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $user = $stmt->fetch();
 
             if ($user && password_verify($password, $user['password'])) {
+                try {
+                    $pdo->prepare("DELETE FROM login_attempts WHERE username = ?")->execute([strtolower($username)]);
+                } catch (Exception $e) {}
                 session_regenerate_id(true);
                 $_SESSION['user'] = [
                     'id' => $user['id'],
@@ -35,10 +56,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
                 exit;
             } else {
+                try {
+                    $pdo->prepare("INSERT INTO login_attempts (ip_address, username) VALUES (?, ?)")->execute([$ip, strtolower(mb_substr($username, 0, 120))]);
+                } catch (Exception $e) {}
                 $error = "Invalid username or password.";
             }
         } catch (Exception $e) {
-            $error = "Database error: " . $e->getMessage();
+            error_log('Login error: ' . $e->getMessage());
+            $error = "Sign-in is temporarily unavailable. Please try again in a moment.";
         }
     }
 }

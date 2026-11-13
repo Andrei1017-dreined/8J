@@ -72,6 +72,10 @@ $protocol = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off') ? "https:
 $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
 define('BASE_URL', $protocol . $host . '/8j_ims/');
 
+// Tax settings: the store is VAT-registered; selling prices already include 12% VAT
+define('VAT_RATE', 0.12);
+define('STORE_TIN', '284-910-332-000');
+
 // Helper function for user auth checks
 function get_current_user_data() {
     return $_SESSION['user'] ?? null;
@@ -134,6 +138,71 @@ function csrf_field() {
 function csrf_valid() {
     return isset($_POST['csrf_token'], $_SESSION['csrf_token'])
         && hash_equals($_SESSION['csrf_token'], $_POST['csrf_token']);
+}
+
+/** Staff-side roles (everyone who works in the admin panel). */
+function is_staff() {
+    return has_role('admin', 'staff', 'technician');
+}
+
+/** Last 10 digits of a PH mobile number, so 0917…, +63917… and 63917… compare equal. '' if too short. */
+function phone_key($s) {
+    $d = preg_replace('/\D/', '', (string)$s);
+    return strlen($d) >= 10 ? substr($d, -10) : '';
+}
+
+/** SQL expression that strips spaces, dashes, +, ( ) from a contact column and keeps the last 10 digits. */
+function phone_key_sql($column) {
+    return "RIGHT(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE($column, ' ', ''), '-', ''), '+', ''), '(', ''), ')', ''), 10)";
+}
+
+// ---------------------------------------------------------------------
+// Site-wide CSRF protection
+// Every POST form gets the token added automatically (output buffer below),
+// and every POST request without a valid token is refused here, before any page logic runs.
+// ---------------------------------------------------------------------
+if (PHP_SAPI !== 'cli') {
+    // Create the token now, while the session is open (the buffer callback runs at the very end of the request)
+    $__csrf_field = csrf_field();
+    ob_start(function ($html) use ($__csrf_field) {
+        if (stripos($html, '<form') === false) return $html;
+        // Each form also gets a one-time code, so a refresh / back-button / double-click can't save it twice
+        return preg_replace_callback('/<form\b[^>]*\bmethod\s*=\s*["\']?post["\']?[^>]*>/i', function ($m) use ($__csrf_field) {
+            return $m[0] . $__csrf_field . '<input type="hidden" name="_once" value="' . bin2hex(random_bytes(8)) . '">';
+        }, $html);
+    });
+
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !csrf_valid()) {
+        http_response_code(403);
+        $back = htmlspecialchars($_SERVER['REQUEST_URI'] ?? BASE_URL, ENT_QUOTES);
+        echo "<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+            <title>Please try again</title>
+            <div style=\"font-family:system-ui,sans-serif;max-width:440px;margin:12vh auto;padding:28px;border:1px solid #fbcfe8;border-radius:18px;background:#fff;color:#2b1120;text-align:center\">
+                <h2 style='margin:0 0 8px'>Please try that again</h2>
+                <p style='color:#6b5563;margin:0 0 20px'>This page was open for a long time or your session ended, so the form couldn't be sent safely. Nothing was saved.</p>
+                <a href=\"$back\" style='display:inline-block;background:#db2777;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none;font-weight:700'>Reload the page</a>
+            </div>";
+        exit;
+    }
+
+    // Duplicate submission (refresh after saving, back button, double-click): don't save it again
+    if (($_SERVER['REQUEST_METHOD'] ?? 'GET') === 'POST' && !empty($_POST['_once']) && is_string($_POST['_once'])) {
+        $used = $_SESSION['form_once_used'] ?? [];
+        if (in_array($_POST['_once'], $used, true)) {
+            http_response_code(409);
+            $back = htmlspecialchars(strtok($_SERVER['REQUEST_URI'] ?? BASE_URL, '#'), ENT_QUOTES);
+            echo "<!doctype html><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>
+                <title>Already saved</title>
+                <div style=\"font-family:system-ui,sans-serif;max-width:440px;margin:12vh auto;padding:28px;border:1px solid #fbcfe8;border-radius:18px;background:#fff;color:#2b1120;text-align:center\">
+                    <h2 style='margin:0 0 8px'>Already saved</h2>
+                    <p style='color:#6b5563;margin:0 0 20px'>This form was already sent, so it wasn't saved a second time. Nothing was charged or changed twice.</p>
+                    <a href=\"$back\" style='display:inline-block;background:#db2777;color:#fff;padding:10px 22px;border-radius:999px;text-decoration:none;font-weight:700'>Go back to the page</a>
+                </div>";
+            exit;
+        }
+        $used[] = $_POST['_once'];
+        $_SESSION['form_once_used'] = array_slice($used, -300);
+    }
 }
 
 /** Writes an entry to the audit_logs table. Never throws. */

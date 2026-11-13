@@ -60,7 +60,39 @@
                 window.syncFloatingCartDock();
             }
         }
+        // While a form is being sent, lock its submit button so it can't be clicked twice
+        document.addEventListener('submit', (e) => {
+            const form = e.target;
+            if (e.defaultPrevented || !(form instanceof HTMLFormElement) || (form.method || '').toLowerCase() !== 'post') return;
+            const btn = e.submitter || form.querySelector('[type="submit"]');
+            if (!btn || btn.dataset.busy) return;
+            btn.dataset.busy = '1';
+            // Keep the clicked button's name/value in the submission before disabling it
+            if (btn.name) {
+                const keep = document.createElement('input');
+                keep.type = 'hidden'; keep.name = btn.name; keep.value = btn.value;
+                form.appendChild(keep);
+            }
+            setTimeout(() => {
+                btn.disabled = true;
+                btn.dataset.label = btn.innerHTML;
+                btn.innerHTML = '<span class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span> Saving…';
+            }, 0);
+        });
+        // Coming back with the browser's Back button: re-enable buttons
+        window.addEventListener('pageshow', (ev) => {
+            if (!ev.persisted) return;
+            document.querySelectorAll('[data-busy]').forEach(b => { b.disabled = false; delete b.dataset.busy; if (b.dataset.label) b.innerHTML = b.dataset.label; });
+        });
+
         document.addEventListener('DOMContentLoaded', () => {
+            // Shortcut links like admin/repairs.php?open=newJobModal open that form straight away
+            const openId = new URLSearchParams(location.search).get('open');
+            const openEl = openId && /^[A-Za-z][\w-]*$/.test(openId) ? document.getElementById(openId) : null;
+            if (openEl && openEl.classList.contains('modal') && window.bootstrap) {
+                new bootstrap.Modal(openEl).show();
+            }
+
             refreshCartBadge(false);
             // Keyboard shortcut '/' to focus search input
             document.addEventListener('keydown', function (e) {

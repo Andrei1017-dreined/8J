@@ -23,7 +23,7 @@ if ($type === 'unit') {
     $category_name = 'Certified Smartphones';
     $item_name = ($item['brand'] ?? '') . ' ' . ($item['model_name'] ?? '');
     $price = (float)($item['selling_price'] ?? 0);
-    $stock = ($item['status'] === 'in_stock') ? 1 : 0;
+    $stock = (($item['status'] ?? '') === 'in_stock') ? 1 : 0;
     $sku = $item['imei_1'] ?? 'UNIT-' . $id;
 } else {
     $stmt = $pdo->prepare("SELECT p.*, c.name as category_name 

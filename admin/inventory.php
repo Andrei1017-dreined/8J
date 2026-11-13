@@ -114,14 +114,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'adjust_stock') {
     $product_id = (int)($_POST['product_id'] ?? 0);
     $qty_change = (int)($_POST['quantity_change'] ?? 0);
-    if ($product_id > 0 && $qty_change != 0) {
+    $direction = $_POST['direction'] ?? 'add';
+    if ($direction === 'remove') $qty_change = -abs($qty_change);
+    $reasons = ['Restock / delivery', 'Damaged / defective', 'Lost / missing', 'Count correction', 'Returned by customer', 'Used for repair'];
+    $reason = in_array($_POST['reason'] ?? '', $reasons, true) ? $_POST['reason'] : 'Restock / delivery';
+    if ($product_id > 0 && $qty_change != 0 && abs($qty_change) <= 10000) {
         try {
-            $upd = $pdo->prepare("UPDATE products SET stock_quantity = GREATEST(0, stock_quantity + ?) WHERE id = ?");
-            $upd->execute([$qty_change, $product_id]);
-            $message = "Stock level updated successfully (" . ($qty_change > 0 ? "+{$qty_change}" : "{$qty_change}") . " units)!";
-            audit_log('Adjusted Stock', 'Inventory', "Product #{$product_id} changed by {$qty_change}");
+            $cur = $pdo->prepare("SELECT name, stock_quantity FROM products WHERE id = ?");
+            $cur->execute([$product_id]);
+            $p = $cur->fetch();
+            if (!$p) throw new Exception("Product not found.");
+            if ($qty_change < 0 && abs($qty_change) > (int)$p['stock_quantity']) {
+                $message = "Error: You can't remove {$qty_change} — only {$p['stock_quantity']} of {$p['name']} are in stock.";
+            } else {
+                $upd = $pdo->prepare("UPDATE products SET stock_quantity = stock_quantity + ? WHERE id = ?");
+                $upd->execute([$qty_change, $product_id]);
+                $new_qty = (int)$p['stock_quantity'] + $qty_change;
+                $message = "{$p['name']}: stock " . ($qty_change > 0 ? "+{$qty_change}" : "{$qty_change}") . " → now {$new_qty}.";
+                audit_log('Adjusted Stock', 'Inventory', "{$p['name']} (#{$product_id}): {$p['stock_quantity']} → {$new_qty} ({$reason})");
+            }
         } catch (Exception $e) {
-            $message = "Error adjusting stock: " . $e->getMessage();
+            error_log('Adjust stock error: ' . $e->getMessage());
+            $message = "Error: The stock change could not be saved.";
         }
     }
 }
@@ -297,6 +311,8 @@ require_once __DIR__ . '/../includes/header.php';
                                                             <input type="hidden" name="quantity_change" value="10">
                                                             <button type="submit" class="btn btn-outline-dark btn-sm py-0 px-2" title="Restock +10 units">+10</button>
                                                         </form>
+                                                        <button type="button" class="btn btn-outline-primary btn-sm py-0 px-2" title="Add or remove any amount, with a reason"
+                                                                onclick="openAdjustModal(<?= (int)$prod['id'] ?>, <?= htmlspecialchars(json_encode($prod['name']), ENT_QUOTES) ?>, <?= (int)$prod['stock_quantity'] ?>)">Adjust…</button>
                                                     </div>
                                                 </td>
                                                 <td class="text-end text-nowrap">
@@ -773,6 +789,60 @@ function filterPhoneUnits() {
         row.style.display = text.includes(q) ? '' : 'none';
     });
 }
+</script>
+
+<!-- Modal: Adjust stock by any amount, with a reason (kept in the activity log) -->
+<div class="modal fade" id="adjustStockModal" tabindex="-1">
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <form method="POST" action="">
+                <input type="hidden" name="action" value="adjust_stock">
+                <input type="hidden" name="product_id" id="adjProductId">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="adjTitle">Adjust stock</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <p class="small text-muted mb-3">In stock now: <strong id="adjCurrent">0</strong></p>
+                    <div class="btn-group w-100 mb-3" role="group">
+                        <input type="radio" class="btn-check" name="direction" id="adjAdd" value="add" checked>
+                        <label class="btn btn-outline-success" for="adjAdd"><i class="fa-solid fa-plus me-1"></i>Add</label>
+                        <input type="radio" class="btn-check" name="direction" id="adjRemove" value="remove">
+                        <label class="btn btn-outline-danger" for="adjRemove"><i class="fa-solid fa-minus me-1"></i>Remove</label>
+                    </div>
+                    <label class="form-label small fw-semibold" for="adjQty">How many</label>
+                    <input type="number" name="quantity_change" id="adjQty" class="form-control mb-3" min="1" max="10000" value="1" required>
+                    <label class="form-label small fw-semibold" for="adjReason">Reason</label>
+                    <select name="reason" id="adjReason" class="form-select">
+                        <option>Restock / delivery</option>
+                        <option>Damaged / defective</option>
+                        <option>Lost / missing</option>
+                        <option>Count correction</option>
+                        <option>Returned by customer</option>
+                        <option>Used for repair</option>
+                    </select>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary fw-bold">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+<script>
+function openAdjustModal(id, name, qty) {
+    document.getElementById('adjProductId').value = id;
+    document.getElementById('adjTitle').innerText = name;
+    document.getElementById('adjCurrent').innerText = qty;
+    document.getElementById('adjQty').value = 1;
+    document.getElementById('adjAdd').checked = true;
+    document.getElementById('adjReason').value = 'Restock / delivery';
+    new bootstrap.Modal(document.getElementById('adjustStockModal')).show();
+}
+// Picking "Remove" suggests a matching reason
+document.getElementById('adjRemove')?.addEventListener('change', () => { document.getElementById('adjReason').value = 'Damaged / defective'; });
+document.getElementById('adjAdd')?.addEventListener('change', () => { document.getElementById('adjReason').value = 'Restock / delivery'; });
 </script>
 
 <?php require_once __DIR__ . '/../includes/footer.php'; ?>

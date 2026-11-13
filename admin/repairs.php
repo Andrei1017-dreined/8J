@@ -14,59 +14,130 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $imei = sanitize($_POST['imei'] ?? '');
     $passcode = sanitize($_POST['passcode'] ?? '');
     $issues = sanitize($_POST['reported_issues'] ?? '');
-    $estimated_cost = (float)($_POST['estimated_cost'] ?? 0);
-    $deposit_paid = (float)($_POST['deposit_paid'] ?? 0);
+    $estimated_cost = max(0, (float)($_POST['estimated_cost'] ?? 0));
+    $deposit_paid = max(0, (float)($_POST['deposit_paid'] ?? 0));
     $technician_id = !empty($_POST['technician_id']) ? (int)$_POST['technician_id'] : null;
+    $customer_contact = preg_replace('/[\s-]/', '', $customer_contact);
 
-    $job_order_no = '8J-REP-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(2)));
+    if ($customer_name === '' || $device_brand === '' || $device_model === '' || $issues === '') {
+        $message = "Error: Customer name, device and the reported problem are required.";
+    } elseif (!preg_match('/^(09\d{9}|\+639\d{9})$/', $customer_contact)) {
+        $message = "Error: Please enter the customer's 11-digit mobile number (it's used to track the repair).";
+    } elseif ($estimated_cost > 0 && $deposit_paid > $estimated_cost) {
+        $message = "Error: The deposit can't be more than the estimated cost.";
+    } else {
+        // 6 hex characters, same as online bookings, so job numbers can't be guessed on the tracking page
+        $job_order_no = '8J-REP-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(3)));
+        try {
+            // Link to the customer's account when the mobile number matches one, so it shows in their My Orders
+            $acct = $pdo->prepare("SELECT id FROM users WHERE role = 'customer' AND " . phone_key_sql('contact_number') . " = ? LIMIT 1");
+            $acct->execute([phone_key($customer_contact)]);
+            $customer_id = $acct->fetchColumn() ?: null;
 
-    try {
-        $stmt = $pdo->prepare("INSERT INTO repair_job_orders 
-            (job_order_no, customer_name, customer_contact, device_brand, device_model, device_imei_or_serial, passcode_or_pattern, reported_issues, estimated_cost, deposit_paid, technician_id, status)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'received')");
-        
-        $stmt->execute([
-            $job_order_no, $customer_name, $customer_contact, $device_brand, $device_model,
-            $imei, $passcode, $issues, $estimated_cost, $deposit_paid, $technician_id
-        ]);
-        $message = "Repair Job Order {$job_order_no} created successfully!";
-    } catch (Exception $e) {
-        $message = "Error creating job order: " . $e->getMessage();
+            $stmt = $pdo->prepare("INSERT INTO repair_job_orders
+                (job_order_no, customer_id, customer_name, customer_contact, device_brand, device_model, device_imei_or_serial, passcode_or_pattern, reported_issues, estimated_cost, deposit_paid, technician_id, status, scheduled_date)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'received', CURDATE())");
+            $stmt->execute([
+                $job_order_no, $customer_id, $customer_name, $customer_contact, $device_brand, $device_model,
+                $imei, $passcode, $issues, $estimated_cost, $deposit_paid, $technician_id
+            ]);
+            $new_job_id = $pdo->lastInsertId();
+            audit_log('Repair Job Created', 'Repairs', "Job {$job_order_no} for {$customer_name}: {$device_brand} {$device_model}");
+            $message = "Repair Job Order {$job_order_no} created successfully!";
+        } catch (Exception $e) {
+            error_log('Create job error: ' . $e->getMessage());
+            $message = "Error: The job order could not be created. Please try again.";
+        }
     }
 }
 
 // Handle Status Update
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_status') {
     $job_id = (int)($_POST['job_id'] ?? 0);
-    $new_status = sanitize($_POST['status'] ?? '');
+    $new_status = $_POST['status'] ?? '';
     $diagnostic_notes = sanitize($_POST['diagnostic_notes'] ?? '');
-    $final_cost = (float)($_POST['final_cost'] ?? 0);
+    $final_cost = max(0, (float)($_POST['final_cost'] ?? 0));
+    $valid_statuses = ['scheduled', 'received', 'diagnosing', 'waiting_parts', 'repairing', 'ready_for_pickup', 'completed', 'unrepairable', 'cancelled'];
 
-    try {
-        $warranty_expiry = ($new_status === 'completed') ? date('Y-m-d', strtotime('+30 days')) : null;
-        $completed_at = ($new_status === 'completed') ? date('Y-m-d H:i:s') : null;
+    $cur = $pdo->prepare("SELECT * FROM repair_job_orders WHERE id = ?");
+    $cur->execute([$job_id]);
+    $job_now = $cur->fetch();
 
-        $stmt = $pdo->prepare("UPDATE repair_job_orders SET 
-            status = ?, diagnostic_notes = ?, final_cost = ?, warranty_expiry = ?, completed_at = ?
-            WHERE id = ?");
-        $stmt->execute([$new_status, $diagnostic_notes, $final_cost, $warranty_expiry, $completed_at, $job_id]);
-        $message = "Job Order #{$job_id} updated to status: " . ucwords(str_replace('_', ' ', $new_status));
-    } catch (Exception $e) {
-        $message = "Update failed: " . $e->getMessage();
+    if (!$job_now) {
+        $message = "Error: That job order no longer exists.";
+    } elseif (!in_array($new_status, $valid_statuses, true)) {
+        $message = "Error: Please choose a valid status.";
+    } else {
+        try {
+            // The warranty starts once, when the phone is released, using the job's own warranty length.
+            // Editing notes later no longer restarts it; reopening a job clears it.
+            if ($new_status === 'completed') {
+                $completed_at = $job_now['completed_at'] ?: date('Y-m-d H:i:s');
+                $warranty_expiry = $job_now['warranty_expiry'] ?: date('Y-m-d', strtotime($completed_at . ' +' . max(0, (int)($job_now['warranty_days'] ?? 30)) . ' days'));
+            } else {
+                $completed_at = null;
+                $warranty_expiry = null;
+            }
+
+            // Technician reassignment (admins/staff only; a technician can't move jobs between people)
+            $technician_id = $job_now['technician_id'];
+            if (has_role('admin', 'staff') && array_key_exists('technician_id', $_POST)) {
+                $technician_id = $_POST['technician_id'] !== '' ? (int)$_POST['technician_id'] : null;
+            } elseif (has_role('technician') && empty($job_now['technician_id'])) {
+                $technician_id = (int)$current_user['id']; // a technician who works an unassigned job takes it
+            }
+
+            $stmt = $pdo->prepare("UPDATE repair_job_orders SET
+                status = ?, diagnostic_notes = ?, final_cost = ?, warranty_expiry = ?, completed_at = ?, technician_id = ?
+                WHERE id = ?");
+            $stmt->execute([$new_status, $diagnostic_notes, $final_cost, $warranty_expiry, $completed_at, $technician_id, $job_id]);
+            $status_label = ucwords(str_replace('_', ' ', $new_status));
+            audit_log('Repair Job Updated', 'Repairs', "Job {$job_now['job_order_no']}: {$job_now['status']} → {$new_status}" . ($final_cost > 0 ? ', bill ' . format_currency($final_cost) : ''));
+            $message = "Job {$job_now['job_order_no']} updated: {$status_label}";
+        } catch (Exception $e) {
+            error_log('Update job error: ' . $e->getMessage());
+            $message = "Error: The update could not be saved. Please try again.";
+        }
     }
 }
 
 // Fetch technicians
 $technicians = $pdo->query("SELECT id, fullname FROM users WHERE role IN ('technician', 'admin')")->fetchAll();
 
-// Fetch job orders
-$status_filter = sanitize($_GET['status'] ?? '');
-$sql = "SELECT r.*, t.fullname as tech_name FROM repair_job_orders r LEFT JOIN users t ON r.technician_id = t.id";
-if (!empty($status_filter)) {
-    $sql .= " WHERE r.status = " . $pdo->quote($status_filter);
+// Fetch job orders: status filter + "my jobs" + search
+$status_filter = $_GET['status'] ?? '';
+$search = trim((string)($_GET['q'] ?? ''));
+$mine = isset($_GET['mine']);
+$where = [];
+$params = [];
+if ($status_filter === 'active') {
+    $where[] = "r.status IN ('scheduled','received','diagnosing','waiting_parts','repairing','ready_for_pickup')";
+} elseif ($status_filter !== '') {
+    $where[] = "r.status = ?";
+    $params[] = $status_filter;
 }
-$sql .= " ORDER BY r.id DESC";
-$job_orders = $pdo->query($sql)->fetchAll();
+if ($mine) {
+    $where[] = "r.technician_id = ?";
+    $params[] = (int)$current_user['id'];
+}
+if ($search !== '') {
+    $where[] = "(r.job_order_no LIKE ? OR r.customer_name LIKE ? OR r.device_model LIKE ?" . (phone_key($search) !== '' ? " OR " . phone_key_sql('r.customer_contact') . " = ?" : "") . ")";
+    $like = '%' . $search . '%';
+    array_push($params, $like, $like, $like);
+    if (phone_key($search) !== '') $params[] = phone_key($search);
+}
+$sql = "SELECT r.*, t.fullname as tech_name FROM repair_job_orders r LEFT JOIN users t ON r.technician_id = t.id"
+     . ($where ? " WHERE " . implode(' AND ', $where) : '')
+     . " ORDER BY FIELD(r.status, 'ready_for_pickup', 'scheduled', 'received', 'diagnosing', 'waiting_parts', 'repairing') = 0,
+                FIELD(r.status, 'ready_for_pickup', 'scheduled', 'received', 'diagnosing', 'waiting_parts', 'repairing'),
+                r.id DESC
+        LIMIT 300";
+$st = $pdo->prepare($sql);
+$st->execute($params);
+$job_orders = $st->fetchAll();
+
+$status_counts = $pdo->query("SELECT status, COUNT(*) c FROM repair_job_orders GROUP BY status")->fetchAll(PDO::FETCH_KEY_PAIR);
+$active_count = array_sum(array_intersect_key($status_counts, array_flip(['scheduled', 'received', 'diagnosing', 'waiting_parts', 'repairing', 'ready_for_pickup'])));
 
 require_once __DIR__ . '/../includes/header.php';
 ?>
@@ -89,20 +160,50 @@ require_once __DIR__ . '/../includes/header.php';
             <?php if ($message): ?>
                 <div class="alert <?= strpos($message, 'Error') !== false ? 'alert-danger' : 'alert-success' ?> alert-dismissible fade show" role="alert">
                     <?= htmlspecialchars($message) ?>
+                    <?php if (!empty($new_job_id)): ?>
+                        <a href="<?= BASE_URL ?>print_job_order.php?id=<?= (int)$new_job_id ?>" target="_blank" class="btn btn-sm btn-dark rounded-pill ms-2"><i class="fa-solid fa-print me-1"></i> Print claim stub</a>
+                    <?php endif; ?>
                     <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                 </div>
             <?php endif; ?>
 
-            <!-- Status Filter Pills -->
-            <div class="d-flex flex-wrap gap-2 mb-4">
-                <a href="<?= BASE_URL ?>admin/repairs.php" class="btn btn-sm <?= empty($status_filter) ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">All</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=received" class="btn btn-sm <?= $status_filter == 'received' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Received</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=diagnosing" class="btn btn-sm <?= $status_filter == 'diagnosing' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Diagnosing</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=waiting_parts" class="btn btn-sm <?= $status_filter == 'waiting_parts' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Waiting Parts</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=repairing" class="btn btn-sm <?= $status_filter == 'repairing' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Repairing</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=ready_for_pickup" class="btn btn-sm <?= $status_filter == 'ready_for_pickup' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Ready for Pick-Up</a>
-                <a href="<?= BASE_URL ?>admin/repairs.php?status=completed" class="btn btn-sm <?= $status_filter == 'completed' ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">Completed</a>
+            <!-- Status Filter Pills (with counts) + search -->
+            <?php
+            $pills = [
+                ''                 => ['All', array_sum($status_counts)],
+                'active'           => ['Active', $active_count],
+                'scheduled'        => ['Booked online', $status_counts['scheduled'] ?? 0],
+                'received'         => ['Received', $status_counts['received'] ?? 0],
+                'diagnosing'       => ['Diagnosing', $status_counts['diagnosing'] ?? 0],
+                'waiting_parts'    => ['Waiting parts', $status_counts['waiting_parts'] ?? 0],
+                'repairing'        => ['Repairing', $status_counts['repairing'] ?? 0],
+                'ready_for_pickup' => ['Ready for pick-up', $status_counts['ready_for_pickup'] ?? 0],
+                'completed'        => ['Released', $status_counts['completed'] ?? 0],
+                'unrepairable'     => ['Unrepairable', $status_counts['unrepairable'] ?? 0],
+                'cancelled'        => ['Cancelled', $status_counts['cancelled'] ?? 0],
+            ];
+            $keep = ($mine ? '&mine=1' : '') . ($search !== '' ? '&q=' . urlencode($search) : '');
+            ?>
+            <div class="d-flex flex-wrap gap-2 mb-3">
+                <?php foreach ($pills as $key => [$label, $n]): ?>
+                    <?php if ($n === 0 && !in_array($key, ['', 'active', $status_filter], true)) continue; ?>
+                    <a href="<?= BASE_URL ?>admin/repairs.php?status=<?= $key ?><?= $keep ?>" class="btn btn-sm <?= $status_filter === $key ? 'btn-primary' : 'btn-outline-secondary' ?> rounded-pill">
+                        <?= $label ?> <span class="ms-1 opacity-75"><?= (int)$n ?></span>
+                    </a>
+                <?php endforeach; ?>
             </div>
+            <form method="GET" class="d-flex flex-wrap gap-2 mb-4" style="max-width: 640px;">
+                <input type="hidden" name="status" value="<?= htmlspecialchars($status_filter) ?>">
+                <input type="search" name="q" value="<?= htmlspecialchars($search) ?>" class="form-control form-control-sm" style="flex: 1 1 260px;" placeholder="Search job #, customer name, phone or model">
+                <?php if (has_role('technician', 'admin')): ?>
+                    <div class="form-check form-switch d-flex align-items-center gap-2 mb-0">
+                        <input class="form-check-input" type="checkbox" name="mine" value="1" id="mineSwitch" <?= $mine ? 'checked' : '' ?> onchange="this.form.submit()">
+                        <label class="form-check-label small" for="mineSwitch">My jobs only</label>
+                    </div>
+                <?php endif; ?>
+                <button class="btn btn-sm btn-dark rounded-pill px-3">Search</button>
+                <?php if ($search !== '' || $mine): ?><a href="<?= BASE_URL ?>admin/repairs.php?status=<?= htmlspecialchars($status_filter) ?>" class="btn btn-sm btn-link">Clear</a><?php endif; ?>
+            </form>
 
             <!-- Job Orders Table -->
             <div class="card card-custom">
@@ -169,6 +270,8 @@ require_once __DIR__ . '/../includes/header.php';
                                                     'repairing' => 'bg-primary-subtle text-primary',
                                                     'ready_for_pickup' => 'bg-success-subtle text-success fw-bold',
                                                     'completed' => 'bg-success text-white',
+                                                    'unrepairable' => 'bg-dark-subtle text-dark',
+                                                    'cancelled' => 'bg-light text-muted text-decoration-line-through',
                                                 ];
                                                 $cls = $badge_map[$job['status']] ?? 'bg-light text-dark';
                                                 ?>
@@ -296,15 +399,28 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Job Order Status</label>
                         <select name="status" id="modalStatusSelect" class="form-select" required>
+                            <option value="scheduled">Booked – waiting for drop-off</option>
                             <option value="received">Received / In Queue</option>
                             <option value="diagnosing">Diagnosing & Testing</option>
                             <option value="waiting_parts">Waiting for Spare Parts</option>
                             <option value="repairing">Repair In Progress</option>
                             <option value="ready_for_pickup">Ready for Customer Pick-Up</option>
-                            <option value="completed">Completed & Released (Applies 30-day Warranty)</option>
+                            <option value="completed">Completed & Released (starts the warranty)</option>
                             <option value="unrepairable">Unrepairable / Returned</option>
+                            <option value="cancelled">Cancelled (no-show / customer cancelled)</option>
                         </select>
                     </div>
+                    <?php if (has_role('admin', 'staff')): ?>
+                        <div class="mb-3">
+                            <label class="form-label small fw-semibold">Assigned technician</label>
+                            <select name="technician_id" id="modalTechSelect" class="form-select">
+                                <option value="">-- Unassigned --</option>
+                                <?php foreach ($technicians as $t): ?>
+                                    <option value="<?= $t['id'] ?>"><?= htmlspecialchars($t['fullname']) ?></option>
+                                <?php endforeach; ?>
+                            </select>
+                        </div>
+                    <?php endif; ?>
                     <div class="mb-3">
                         <label class="form-label small fw-semibold">Diagnostic Notes & Actions Done</label>
                         <textarea name="diagnostic_notes" id="modalNotes" class="form-control" rows="3" placeholder="e.g. Replaced LCD assembly, tested touch response and TrueTone"></textarea>
@@ -349,7 +465,9 @@ function openUpdateModal(job) {
     document.getElementById('modalTitle').innerText = 'Update Ticket ' + job.job_order_no;
     document.getElementById('modalStatusSelect').value = job.status;
     document.getElementById('modalNotes').value = job.diagnostic_notes || '';
-    document.getElementById('modalFinalCost').value = (job.final_cost > 0) ? job.final_cost : job.estimated_cost;
+    document.getElementById('modalFinalCost').value = (parseFloat(job.final_cost) > 0) ? job.final_cost : job.estimated_cost;
+    const techSel = document.getElementById('modalTechSelect');
+    if (techSel) techSel.value = job.technician_id || '';
     new bootstrap.Modal(document.getElementById('updateStatusModal')).show();
 }
 </script>

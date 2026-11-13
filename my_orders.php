@@ -1,35 +1,85 @@
 <?php
 $page_title = "My Customer Dashboard";
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/order_helpers.php';
 require_login();
 
 $user_id = $current_user['id'];
 $message = '';
 $message_type = 'success';
 
-// Handle Profile Update
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
-    $fullname = sanitize($_POST['fullname'] ?? '');
-    $contact = sanitize($_POST['contact_number'] ?? '');
-    $address = sanitize($_POST['address'] ?? '');
-    $new_password = $_POST['new_password'] ?? '';
+expire_overdue_pickups($pdo);
 
+// Customer cancels their own open pick-up reservation
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'cancel_order') {
+    $oid = (int)($_POST['order_id'] ?? 0);
+    $own = $pdo->prepare("SELECT order_code FROM online_orders WHERE id = ? AND customer_id = ?");
+    $own->execute([$oid, $user_id]);
+    $code = $own->fetchColumn();
     try {
-        if (!empty($new_password)) {
-            $hashed = password_hash($new_password, PASSWORD_DEFAULT);
-            $stmt = $pdo->prepare("UPDATE users SET fullname = ?, contact_number = ?, address = ?, password = ? WHERE id = ?");
-            $stmt->execute([$fullname, $contact, $address, $hashed, $user_id]);
+        if ($code && close_pickup_order($pdo, $oid, 'cancelled', 'Cancelled by the customer online')) {
+            audit_log('Pick-up Cancelled', 'Pickups', "Customer cancelled order {$code}");
+            $message = "Reservation {$code} was cancelled.";
         } else {
-            $stmt = $pdo->prepare("UPDATE users SET fullname = ?, contact_number = ?, address = ? WHERE id = ?");
-            $stmt->execute([$fullname, $contact, $address, $user_id]);
+            $message = "That reservation can no longer be cancelled.";
+            $message_type = 'danger';
         }
-        $current_user = get_current_user_data();
-        $message = "Profile details updated successfully!";
     } catch (Exception $e) {
-        $message = "Update failed: " . $e->getMessage();
+        $message = "We couldn't cancel the reservation right now. Please try again.";
         $message_type = 'danger';
     }
 }
+
+// Handle Profile Update
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'update_profile') {
+    $fullname = sanitize($_POST['fullname'] ?? '');
+    $contact = preg_replace('/[\s-]/', '', sanitize($_POST['contact_number'] ?? ''));
+    $address = sanitize($_POST['address'] ?? '');
+    $new_password = $_POST['new_password'] ?? '';
+    $current_password = $_POST['current_password'] ?? '';
+
+    $message_type = 'danger';
+    if ($fullname === '') {
+        $message = "Please enter your full name.";
+    } elseif (!preg_match('/^(09\d{9}|\+639\d{9})$/', $contact)) {
+        $message = "Please enter an 11-digit mobile number starting with 09.";
+    } elseif ($new_password !== '' && strlen($new_password) < 8) {
+        $message = "Your new password must be at least 8 characters.";
+    } else {
+        try {
+            $row = $pdo->prepare("SELECT password FROM users WHERE id = ?");
+            $row->execute([$user_id]);
+            $hash = $row->fetchColumn();
+
+            if ($new_password !== '' && !password_verify($current_password, (string)$hash)) {
+                $message = "Your current password is incorrect, so the password was not changed.";
+            } else {
+                if ($new_password !== '') {
+                    $stmt = $pdo->prepare("UPDATE users SET fullname = ?, contact_number = ?, address = ?, password = ? WHERE id = ?");
+                    $stmt->execute([$fullname, $contact, $address, password_hash($new_password, PASSWORD_DEFAULT), $user_id]);
+                    audit_log('Password Changed', 'Account', "Customer #{$user_id} changed their password");
+                } else {
+                    $stmt = $pdo->prepare("UPDATE users SET fullname = ?, contact_number = ?, address = ? WHERE id = ?");
+                    $stmt->execute([$fullname, $contact, $address, $user_id]);
+                }
+                // Keep the session (navbar, lookups below) in step with the new details
+                $_SESSION['user']['fullname'] = $fullname;
+                $_SESSION['user']['contact_number'] = $contact;
+                $current_user = get_current_user_data();
+                $message = "Profile details updated successfully!";
+                $message_type = 'success';
+            }
+        } catch (Exception $e) {
+            error_log('Profile update error: ' . $e->getMessage());
+            $message = "We couldn't save your profile right now. Please try again.";
+        }
+    }
+}
+
+// The profile form needs the address, which isn't kept in the session
+$profile_stmt = $pdo->prepare("SELECT fullname, contact_number, address FROM users WHERE id = ?");
+$profile_stmt->execute([$user_id]);
+$profile = $profile_stmt->fetch() ?: ['fullname' => $current_user['fullname'], 'contact_number' => $current_user['contact_number'], 'address' => ''];
 
 // 1. Fetch In-Store Pick-Up Orders with Items
 $ord_stmt = $pdo->prepare("SELECT * FROM online_orders WHERE customer_id = ? ORDER BY id DESC");
@@ -44,23 +94,22 @@ foreach ($my_orders as &$o) {
 }
 unset($o);
 
-// 2. Fetch Customer Repair Orders (By Contact No. or Fullname)
-$repairs = [];
-if (!empty($current_user['contact_number']) || !empty($current_user['fullname'])) {
-    $rep_stmt = $pdo->prepare("SELECT r.*, t.fullname as tech_name 
-                               FROM repair_job_orders r 
-                               LEFT JOIN users t ON r.technician_id = t.id 
-                               WHERE r.customer_contact = ? OR r.customer_name = ? 
-                               ORDER BY r.id DESC");
-    $rep_stmt->execute([$current_user['contact_number'], $current_user['fullname']]);
-    $repairs = $rep_stmt->fetchAll();
-}
+// 2. Customer repair orders: booked on this account, or under this account's mobile number.
+//    (Matching by name used to show other people with the same name their repairs.)
+$my_phone = phone_key($current_user['contact_number'] ?? '');
+$rep_stmt = $pdo->prepare("SELECT r.*, t.fullname as tech_name
+                           FROM repair_job_orders r
+                           LEFT JOIN users t ON r.technician_id = t.id
+                           WHERE r.customer_id = ? OR (? <> '' AND " . phone_key_sql('r.customer_contact') . " = ?)
+                           ORDER BY r.id DESC");
+$rep_stmt->execute([$user_id, $my_phone, $my_phone]);
+$repairs = $rep_stmt->fetchAll();
 
-// 3. Fetch Customer Trade-Ins & Appraisals
+// 3. Customer trade-ins & appraisals (by mobile number only)
 $appraisals = [];
-if (!empty($current_user['contact_number']) || !empty($current_user['fullname'])) {
-    $app_stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE contact_number = ? OR customer_name = ? ORDER BY id DESC");
-    $app_stmt->execute([$current_user['contact_number'], $current_user['fullname']]);
+if ($my_phone !== '') {
+    $app_stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE " . phone_key_sql('contact_number') . " = ? ORDER BY id DESC");
+    $app_stmt->execute([$my_phone]);
     $appraisals = $app_stmt->fetchAll();
 }
 
@@ -144,22 +193,24 @@ require_once __DIR__ . '/includes/header.php';
                                         <div class="small text-muted">Pick-Up Date: <strong class="text-dark"><?= date('F d, Y', strtotime($ord['pickup_target_date'])) ?></strong></div>
                                     </div>
                                     <div>
-                                        <?php if ($ord['pickup_status'] === 'claimed'): ?>
-                                            <span class="badge bg-dark text-white"><i class="fa-solid fa-check me-1"></i> Claimed</span>
-                                        <?php elseif ($ord['pickup_status'] === 'ready_for_pickup'): ?>
-                                            <span class="badge bg-light text-dark border border-dark"><i class="fa-solid fa-bell me-1"></i> Ready for Pick-Up</span>
-                                        <?php else: ?>
-                                            <span class="badge bg-light text-secondary border"><i class="fa-solid fa-clock me-1"></i> Preparing</span>
-                                        <?php endif; ?>
+                                        <?php [$bl, $bc, $bi] = pickup_status_badge($ord['pickup_status']); ?>
+                                        <span class="badge <?= $bc ?>"><i class="fa-solid <?= $bi ?> me-1"></i> <?= $bl ?></span>
                                     </div>
                                 </div>
 
-                                <!-- Claim Code Ticket Voucher -->
-                                <div class="p-3 bg-light rounded-3 text-center my-2 border">
-                                    <span class="small text-muted text-uppercase fw-semibold d-block">Claim Verification Code</span>
-                                    <h2 class="display-6 fw-extrabold text-dark font-monospace mb-0"><?= htmlspecialchars($ord['claim_verification_code']) ?></h2>
-                                    <small class="text-muted">Present this code at Tanauan store counter</small>
-                                </div>
+                                <?php $ord_open = in_array($ord['pickup_status'], ['pending_confirmation', 'ready_for_pickup'], true); ?>
+                                <?php if ($ord_open): ?>
+                                    <!-- Claim Code Ticket Voucher -->
+                                    <div class="p-3 bg-light rounded-3 text-center my-2 border">
+                                        <span class="small text-muted text-uppercase fw-semibold d-block">Claim Verification Code</span>
+                                        <h2 class="display-6 fw-extrabold text-dark font-monospace mb-0"><?= htmlspecialchars($ord['claim_verification_code']) ?></h2>
+                                        <small class="text-muted">Show this code at the 8J counter. Held until <?= date('M j', strtotime($ord['pickup_target_date'] . ' +' . PICKUP_HOLD_DAYS . ' days')) ?>.</small>
+                                    </div>
+                                <?php elseif ($ord['pickup_status'] === 'claimed'): ?>
+                                    <div class="small text-muted my-2"><i class="fa-solid fa-circle-check text-success me-1"></i>Collected <?= !empty($ord['claimed_at']) ? date('M j, Y g:i A', strtotime($ord['claimed_at'])) : '' ?></div>
+                                <?php else: ?>
+                                    <div class="small text-muted my-2"><i class="fa-solid fa-circle-info me-1"></i><?= $ord['pickup_status'] === 'expired' ? 'This reservation expired because it wasn\'t collected in time.' : 'This reservation was cancelled.' ?></div>
+                                <?php endif; ?>
 
                                 <!-- Items List -->
                                 <?php if (!empty($ord['items'])): ?>
@@ -181,12 +232,21 @@ require_once __DIR__ . '/includes/header.php';
 
                                 <div class="d-flex justify-content-between align-items-center mt-auto pt-3 border-top">
                                     <div>
-                                        <span class="text-muted small">Total Due Upon Claim:</span>
+                                        <span class="text-muted small"><?= $ord['pickup_status'] === 'claimed' ? 'Paid:' : 'Total Due Upon Claim:' ?></span>
                                         <span class="fw-extrabold text-dark fs-5 ms-1"><?= format_currency($ord['total_amount']) ?></span>
                                     </div>
-                                    <button class="btn btn-outline-dark btn-sm rounded-pill px-3 btn-tactile" onclick="window.print()">
-                                        <i class="fa-solid fa-print me-1"></i> Print Slip
-                                    </button>
+                                    <?php if ($ord_open): ?>
+                                        <div class="d-flex gap-2">
+                                            <form method="POST" action="" onsubmit="return confirm('Cancel reservation <?= htmlspecialchars($ord['order_code']) ?>? Reserved phones go back on sale.');">
+                                                <input type="hidden" name="action" value="cancel_order">
+                                                <input type="hidden" name="order_id" value="<?= (int)$ord['id'] ?>">
+                                                <button type="submit" class="btn btn-outline-danger btn-sm rounded-pill px-3">Cancel</button>
+                                            </form>
+                                            <button class="btn btn-outline-dark btn-sm rounded-pill px-3 btn-tactile" onclick="window.print()">
+                                                <i class="fa-solid fa-print me-1"></i> Print Slip
+                                            </button>
+                                        </div>
+                                    <?php endif; ?>
                                 </div>
                             </div>
                         </div>
@@ -317,23 +377,36 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Full Name</label>
-                                    <input type="text" name="fullname" class="form-control" value="<?= htmlspecialchars($current_user['fullname']) ?>" required>
+                                    <input type="text" name="fullname" class="form-control" value="<?= htmlspecialchars(html_entity_decode($profile['fullname'] ?? '', ENT_QUOTES)) ?>" required maxlength="120" autocomplete="name">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Mobile Contact Number</label>
-                                    <input type="text" name="contact_number" class="form-control" value="<?= htmlspecialchars($current_user['contact_number']) ?>" placeholder="09xxxxxxxxx" required>
+                                    <input type="tel" name="contact_number" class="form-control" value="<?= htmlspecialchars($profile['contact_number'] ?? '') ?>" placeholder="09xxxxxxxxx" inputmode="tel" autocomplete="tel" required>
+                                    <div class="form-text small">Your repairs and trade-ins are linked to this number.</div>
                                 </div>
                             </div>
 
                             <div class="mb-3">
                                 <label class="form-label small fw-semibold">Delivery / Residential Address</label>
-                                <textarea name="address" class="form-control" rows="2" placeholder="Barangay, City, Province"><?= htmlspecialchars($current_user['address'] ?? '') ?></textarea>
+                                <textarea name="address" class="form-control" rows="2" placeholder="Barangay, City, Province"><?= htmlspecialchars(html_entity_decode($profile['address'] ?? '', ENT_QUOTES)) ?></textarea>
                             </div>
 
-                            <div class="mb-4">
-                                <label class="form-label small fw-semibold">Change Password (leave blank to keep current)</label>
-                                <input type="password" name="new_password" class="form-control" placeholder="Enter new password (optional)">
+                            <div class="row g-3 mb-4">
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">New password <span class="text-muted fw-normal">(leave blank to keep current)</span></label>
+                                    <input type="password" name="new_password" id="pfNewPw" class="form-control" minlength="8" autocomplete="new-password" placeholder="At least 8 characters">
+                                </div>
+                                <div class="col-md-6">
+                                    <label class="form-label small fw-semibold">Current password <span class="text-muted fw-normal">(needed to change it)</span></label>
+                                    <input type="password" name="current_password" id="pfCurPw" class="form-control" autocomplete="current-password">
+                                </div>
                             </div>
+                            <script>
+                                // Ask for the current password only when a new one is being set
+                                document.getElementById('pfNewPw')?.addEventListener('input', e => {
+                                    document.getElementById('pfCurPw').required = e.target.value.length > 0;
+                                });
+                            </script>
 
                             <button type="submit" class="btn btn-primary rounded-pill px-4 fw-bold btn-tactile">
                                 <i class="fa-solid fa-floppy-disk me-1"></i> Save Changes

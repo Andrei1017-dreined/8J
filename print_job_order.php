@@ -18,6 +18,17 @@ $job = $stmt->fetch();
 if (!$job) {
     die("<h3>Repair Job Order not found.</h3>");
 }
+
+// Staff see everything. A customer may print only their own job order, and never sees the passcode.
+$staff_view = is_staff();
+if (!$staff_view) {
+    $mine = (!empty($job['customer_id']) && (int)$job['customer_id'] === (int)$current_user['id'])
+         || (phone_key($current_user['contact_number'] ?? '') !== '' && phone_key($current_user['contact_number']) === phone_key($job['customer_contact']));
+    if (!$mine) {
+        header("Location: " . BASE_URL . "unauthorized.php");
+        exit;
+    }
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -220,7 +231,7 @@ if (!$job) {
                     <div><strong>Device:</strong> <?= htmlspecialchars($job['device_brand'] . ' ' . $job['device_model']) ?></div>
                 </div>
                 <div>
-                    <div><strong>Screen Passcode:</strong> <code><?= htmlspecialchars($job['passcode_or_pattern'] ?: 'None provided') ?></code></div>
+                    <div><strong>Screen Passcode:</strong> <code><?= $staff_view ? htmlspecialchars($job['passcode_or_pattern'] ?: 'None provided') : ($job['passcode_or_pattern'] ? '•••• (on file)' : 'None provided') ?></code></div>
                     <div><strong>Technician:</strong> <?= htmlspecialchars($job['tech_name'] ?? 'Pending') ?></div>
                 </div>
             </div>
@@ -235,7 +246,7 @@ if (!$job) {
     <script src="<?= BASE_URL ?>assets/js/qrcode.min.js"></script>
     <script>
     document.addEventListener("DOMContentLoaded", function() {
-        const trackUrl = "<?= (isset($_SERVER['HTTP_HOST']) ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . BASE_URL ?>track_repair.php?ticket=<?= urlencode($job['job_order_no']) ?>";
+        const trackUrl = <?= json_encode(BASE_URL . 'track_repair.php?q=' . rawurlencode($job['job_order_no'])) ?>;
         const container = document.getElementById("qrcodeJob");
         if (container && typeof QRCode !== 'undefined') {
             new QRCode(container, {

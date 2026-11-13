@@ -32,6 +32,25 @@ if (!$sale) {
     die("<div style='font-family:sans-serif;padding:30px;text-align:center;'><h3>Invoice record not found.</h3><p>The requested sales invoice does not exist or has been archived.</p></div>");
 }
 
+// Who may see it:
+//  - staff, and the customer the sale belongs to: full receipt
+//  - anyone holding the invoice number (the QR code printed on the receipt): receipt with contact details hidden
+//  - looking receipts up by sequential ?id= needs staff or the owner
+$is_owner = is_logged_in() && !empty($sale['customer_id']) && (int)$sale['customer_id'] === (int)$current_user['id'];
+$full_view = is_staff() || $is_owner;
+if (!$full_view) {
+    if ($invoice_no === '' || strcasecmp($invoice_no, $sale['invoice_no']) !== 0) {
+        if (!is_logged_in()) {
+            header("Location: " . BASE_URL . "login.php");
+        } else {
+            header("Location: " . BASE_URL . "unauthorized.php");
+        }
+        exit;
+    }
+    $sale['customer_phone'] = '';
+    $sale['customer_email'] = '';
+}
+
 // Fetch sale items with linked IMEI details if phone unit
 $items_stmt = $pdo->prepare("
     SELECT si.*, 
@@ -51,16 +70,16 @@ $store = [
     'name' => '8J CELLPHONE & ACCESSORIES',
     'tagline' => 'Retail • Smartphone Swaps • Certified Pre-Owned • Repairs',
     'location' => '2nd Floor, Victory Mall Tanauan, Stall #S1, Tanauan City, Batangas',
-    'tin' => '284-910-332-000 Non-VAT Reg.',
+    'tin' => 'VAT Reg. ' . STORE_TIN,
     'hotline' => '0909-9833-981 / 0917-123-4567',
     'email' => 'sales@8jaccessories.ph',
-    'website' => (isset($_SERVER['HTTP_HOST']) ? (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http') . '://' . $_SERVER['HTTP_HOST'] : 'http://localhost') . BASE_URL
+    'website' => BASE_URL // already includes the protocol and host
 ];
 
 // Calculation of VAT (Philippines 12% VAT inclusive calculation)
 // Total Amount = Vatable Sales * 1.12
 $total_amount = (float)$sale['total_amount'];
-$vatable_sales = round($total_amount / 1.12, 2);
+$vatable_sales = round($total_amount / (1 + VAT_RATE), 2);
 $vat_amount = round($total_amount - $vatable_sales, 2);
 
 // Verification URL for QR code
@@ -592,7 +611,7 @@ $verify_url = $store['website'] . 'print_receipt.php?invoice=' . urlencode($sale
 
                     <div style="margin-top: 12px; padding-top: 10px; border-top: 1px dashed #cbd5e1; font-size: 11px; color: #64748b;">
                         <div class="a4-totals-row">
-                            <span>Vatable Sales (Net of 12%):</span>
+                            <span>VATable Sales (net of VAT):</span>
                             <span><?= format_currency($vatable_sales) ?></span>
                         </div>
                         <div class="a4-totals-row">
@@ -600,8 +619,16 @@ $verify_url = $store['website'] . 'print_receipt.php?invoice=' . urlencode($sale
                             <span><?= format_currency($vat_amount) ?></span>
                         </div>
                         <div class="a4-totals-row">
-                            <span>VAT-Exempt / Zero-Rated:</span>
+                            <span>VAT-Exempt Sales:</span>
                             <span>₱0.00</span>
+                        </div>
+                        <div class="a4-totals-row">
+                            <span>Zero-Rated Sales:</span>
+                            <span>₱0.00</span>
+                        </div>
+                        <div class="a4-totals-row" style="font-weight: 700; color: #334155;">
+                            <span>Total (VAT inclusive):</span>
+                            <span><?= format_currency($total_amount) ?></span>
                         </div>
                     </div>
                 </div>
@@ -712,7 +739,7 @@ $verify_url = $store['website'] . 'print_receipt.php?invoice=' . urlencode($sale
             <!-- Tax Summary -->
             <div class="thermal-tax-breakdown">
                 <div class="thermal-row">
-                    <span>Vatable Sales:</span>
+                    <span>VATable Sales:</span>
                     <span>₱<?= number_format($vatable_sales, 2) ?></span>
                 </div>
                 <div class="thermal-row">
@@ -720,7 +747,11 @@ $verify_url = $store['website'] . 'print_receipt.php?invoice=' . urlencode($sale
                     <span>₱<?= number_format($vat_amount, 2) ?></span>
                 </div>
                 <div class="thermal-row">
-                    <span>VAT-Exempt:</span>
+                    <span>VAT-Exempt Sales:</span>
+                    <span>₱0.00</span>
+                </div>
+                <div class="thermal-row">
+                    <span>Zero-Rated Sales:</span>
                     <span>₱0.00</span>
                 </div>
             </div>

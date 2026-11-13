@@ -1,82 +1,109 @@
 <?php
 $page_title = "My Pick-Up Cart";
 require_once __DIR__ . '/config/db.php';
+require_once __DIR__ . '/includes/order_helpers.php';
 
 $message = '';
 $order_placed = null;
+$repriced_cart = null; // sent back to the browser when the cart had stale prices or unavailable items
 
 // Handle Order Placement
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'place_pickup_order') {
     $customer_name = sanitize($_POST['customer_name'] ?? '');
-    $customer_contact = sanitize($_POST['customer_contact'] ?? '');
-    $target_date = sanitize($_POST['pickup_target_date'] ?? date('Y-m-d'));
-    $cart_data_json = $_POST['cart_data'] ?? '[]';
-    $cart_items = json_decode($cart_data_json, true) ?: [];
+    $customer_contact = preg_replace('/[\s-]/', '', sanitize($_POST['customer_contact'] ?? ''));
+    $target_date = $_POST['pickup_target_date'] ?? '';
+    $cart_items = json_decode($_POST['cart_data'] ?? '[]', true);
+    $cart_items = is_array($cart_items) ? $cart_items : [];
+    $client_total = 0.0;
+    foreach ($cart_items as $ci) {
+        $client_total += (float)($ci['price'] ?? 0) * (int)($ci['quantity'] ?? 1);
+    }
+
+    $d = DateTime::createFromFormat('Y-m-d', (string)$target_date);
+    $date_ok = $d && $d->format('Y-m-d') === $target_date
+        && $target_date >= date('Y-m-d') && $target_date <= date('Y-m-d', strtotime('+3 days'));
 
     if (empty($cart_items)) {
         $message = "Error: Your cart is empty!";
+    } elseif ($customer_name === '') {
+        $message = "Error: Please enter your full name.";
+    } elseif (!preg_match('/^(09\d{9}|\+639\d{9})$/', $customer_contact)) {
+        $message = "Error: Please enter an 11-digit mobile number starting with 09.";
+    } elseif (!$date_ok) {
+        $message = "Error: Please pick a pick-up date between today and " . date('M j', strtotime('+3 days')) . ".";
     } else {
         try {
             $pdo->beginTransaction();
 
-            // 1. Get or create customer user account
-            $user_id = $current_user['id'] ?? null;
-            if (!$user_id) {
-                // Check if user with contact exists or create guest user
-                $chk = $pdo->prepare("SELECT id FROM users WHERE contact_number = ? LIMIT 1");
-                $chk->execute([$customer_contact]);
-                $user_id = $chk->fetchColumn();
+            // Prices and availability come from the database, with the rows locked until we commit
+            $priced = price_cart($pdo, $cart_items, true);
 
+            if ($priced['errors'] || !$priced['items'] || abs($priced['total'] - $client_total) > 0.009) {
+                $pdo->rollBack();
+                $repriced_cart = array_map(fn($i) => ['id' => $i['id'], 'name' => $i['name'], 'price' => $i['unit_price'], 'type' => $i['type'], 'quantity' => $i['quantity']], $priced['items']);
+                $message = "Error: Your cart was updated before checkout. "
+                    . ($priced['errors'] ? implode(' ', array_unique($priced['errors'])) . ' ' : 'Some prices changed. ')
+                    . "Please review the new total and confirm again.";
+            } else {
+                // 1. Customer account: the signed-in user, or a guest record for this mobile number
+                $user_id = $current_user['id'] ?? null;
                 if (!$user_id) {
-                    $rand_pass = password_hash('customer123', PASSWORD_DEFAULT);
-                    $rand_user = 'cust_' . time();
-                    $ins_u = $pdo->prepare("INSERT INTO users (fullname, email, username, password, role, contact_number) VALUES (?, ?, ?, ?, 'customer', ?)");
-                    $ins_u->execute([$customer_name, $rand_user . '@8jclient.com', $rand_user, $rand_pass, $customer_contact]);
-                    $user_id = $pdo->lastInsertId();
+                    // Only reuse an earlier *guest* record; never attach an order to someone's real account
+                    $chk = $pdo->prepare("SELECT id FROM users WHERE contact_number = ? AND email LIKE '%@8jclient.com' AND role = 'customer' LIMIT 1");
+                    $chk->execute([$customer_contact]);
+                    $user_id = $chk->fetchColumn();
+
+                    if (!$user_id) {
+                        // Random, unusable password: guest records can't be signed into
+                        $guest_user = 'guest_' . bin2hex(random_bytes(5));
+                        $ins_u = $pdo->prepare("INSERT INTO users (fullname, email, username, password, role, contact_number) VALUES (?, ?, ?, ?, 'customer', ?)");
+                        $ins_u->execute([$customer_name, $guest_user . '@8jclient.com', $guest_user, password_hash(bin2hex(random_bytes(24)), PASSWORD_DEFAULT), $customer_contact]);
+                        $user_id = $pdo->lastInsertId();
+                    }
                 }
-            }
 
-            // 2. Compute total
-            $total_amount = 0;
-            foreach ($cart_items as $item) {
-                $total_amount += ((float)$item['price'] * (int)$item['quantity']);
-            }
+                // 2. Codes
+                $order_code = '8J-ORD-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(3)));
+                $claim_code = '8J-' . random_int(1000, 9999);
+                $total_amount = $priced['total'];
 
-            // 3. Generate Codes
-            $order_code = '8J-ORD-' . date('ym') . '-' . strtoupper(bin2hex(random_bytes(2)));
-            $claim_code = '8J-' . rand(1000, 9999);
+                $notes = "Reserved by {$customer_name} ({$customer_contact})";
+                $ins_ord = $pdo->prepare("INSERT INTO online_orders (order_code, customer_id, total_amount, pickup_target_date, pickup_status, claim_verification_code, notes) VALUES (?, ?, ?, ?, 'pending_confirmation', ?, ?)");
+                $ins_ord->execute([$order_code, $user_id, $total_amount, $target_date, $claim_code, $notes]);
+                $order_id = $pdo->lastInsertId();
 
-            $ins_ord = $pdo->prepare("INSERT INTO online_orders (order_code, customer_id, total_amount, pickup_target_date, pickup_status, claim_verification_code) VALUES (?, ?, ?, ?, 'pending_confirmation', ?)");
-            $ins_ord->execute([$order_code, $user_id, $total_amount, $target_date, $claim_code]);
-            $order_id = $pdo->lastInsertId();
-
-            // 4. Insert items
-            $ins_item = $pdo->prepare("INSERT INTO online_order_items (order_id, item_type, product_id, phone_unit_id, item_name, unit_price, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
-            foreach ($cart_items as $item) {
-                $p_id = ($item['type'] === 'product') ? $item['id'] : null;
-                $u_id = ($item['type'] === 'phone_unit') ? $item['id'] : null;
-                $sub = (float)$item['price'] * (int)$item['quantity'];
-                $ins_item->execute([$order_id, $item['type'], $p_id, $u_id, $item['name'], $item['price'], $item['quantity'], $sub]);
-
-                // Reserve phone unit if applicable
-                if ($u_id) {
-                    $pdo->prepare("UPDATE phone_units SET status = 'reserved' WHERE id = ?")->execute([$u_id]);
+                // 3. Items (database prices) + reserve phones
+                $ins_item = $pdo->prepare("INSERT INTO online_order_items (order_id, item_type, product_id, phone_unit_id, item_name, unit_price, quantity, subtotal) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
+                $reserve = $pdo->prepare("UPDATE phone_units SET status = 'reserved' WHERE id = ? AND status = 'in_stock'");
+                foreach ($priced['items'] as $item) {
+                    $p_id = $item['type'] === 'product' ? $item['id'] : null;
+                    $u_id = $item['type'] === 'phone_unit' ? $item['id'] : null;
+                    $ins_item->execute([$order_id, $item['type'], $p_id, $u_id, $item['name'], $item['unit_price'], $item['quantity'], $item['subtotal']]);
+                    if ($u_id) {
+                        $reserve->execute([$u_id]);
+                        if ($reserve->rowCount() !== 1) {
+                            throw new StockChangedException('phone just reserved');
+                        }
+                    }
                 }
+
+                audit_log('Pick-up Reserved', 'Pickups', "Order {$order_code}: " . count($priced['items']) . " item(s), " . format_currency($total_amount));
+                $pdo->commit();
+                $order_placed = [
+                    'order_code' => $order_code,
+                    'claim_code' => $claim_code,
+                    'total_amount' => $total_amount,
+                    'pickup_target_date' => $target_date,
+                    'customer_name' => $customer_name
+                ];
+                $message = "Your online pick-up reservation has been confirmed!";
             }
-
-            $pdo->commit();
-            $order_placed = [
-                'order_code' => $order_code,
-                'claim_code' => $claim_code,
-                'total_amount' => $total_amount,
-                'pickup_target_date' => $target_date,
-                'customer_name' => $customer_name
-            ];
-            $message = "Your online pick-up reservation has been confirmed!";
-
         } catch (Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            $message = "Order placement error: " . $e->getMessage();
+            error_log('Pick-up order error: ' . $e->getMessage());
+            $message = $e instanceof StockChangedException
+                ? "Error: A phone in your cart was just reserved by someone else. Please review your cart."
+                : "Error: We couldn't place your reservation right now. Please try again.";
         }
     }
 }
@@ -160,11 +187,11 @@ require_once __DIR__ . '/includes/header.php';
                             <div class="row g-3 mb-3">
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Your Full Name</label>
-                                    <input type="text" name="customer_name" class="form-control" value="<?= htmlspecialchars($current_user['fullname'] ?? '') ?>" required placeholder="e.g. Maria Santos">
+                                    <input type="text" name="customer_name" class="form-control" value="<?= isset($customer_name) ? $customer_name : htmlspecialchars($current_user['fullname'] ?? '') ?>" required maxlength="120" autocomplete="name" placeholder="e.g. Maria Santos">
                                 </div>
                                 <div class="col-md-6">
                                     <label class="form-label small fw-semibold">Mobile Contact Number</label>
-                                    <input type="text" name="customer_contact" class="form-control" value="<?= htmlspecialchars($current_user['contact_number'] ?? '') ?>" required placeholder="09xxxxxxxxx">
+                                    <input type="tel" name="customer_contact" class="form-control" value="<?= isset($customer_contact) ? $customer_contact : htmlspecialchars($current_user['contact_number'] ?? '') ?>" required inputmode="tel" autocomplete="tel" pattern="(09|\+639)[0-9\s-]{9,12}" title="11-digit mobile number starting with 09" placeholder="09xxxxxxxxx">
                                 </div>
                             </div>
 
@@ -186,6 +213,15 @@ require_once __DIR__ . '/includes/header.php';
 </div>
 
 <script>
+<?php if ($repriced_cart !== null): ?>
+// The server re-checked the cart: keep only what's still available, at today's prices
+localStorage.setItem('8j_cart', JSON.stringify(<?= json_encode($repriced_cart, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT) ?>));
+<?php endif; ?>
+
+function escCart(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => ({'&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'}[c]));
+}
+
 function renderCartView() {
     let cart = JSON.parse(localStorage.getItem('8j_cart') || '[]');
     const container = document.getElementById('cartListContainer');
@@ -210,7 +246,7 @@ function renderCartView() {
         html += `
             <tr>
                 <td>
-                    <div class="fw-bold">${item.name}</div>
+                    <div class="fw-bold">${escCart(item.name)}</div>
                     <span class="badge bg-light text-secondary border" style="font-size:0.65rem;">${item.type === 'phone_unit' ? 'Phone Unit' : 'Accessory'}</span>
                 </td>
                 <td class="text-center">

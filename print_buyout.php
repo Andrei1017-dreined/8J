@@ -4,7 +4,8 @@
  * Anti-Fencing Law (P.D. 1612) Compliance Form
  */
 require_once __DIR__ . '/config/db.php';
-require_login();
+// Contains the seller's government ID number and home address: staff only
+require_role('admin', 'staff');
 
 $buyout_id = (int)($_GET['id'] ?? 0);
 $trans_no = sanitize($_GET['trans'] ?? '');

@@ -29,7 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $stmt->execute([$matrix_id]);
     $mat = $stmt->fetch();
 
-    if ($mat && $icloud_clean == 1) {
+    if (!$mat) {
+        $message = "Error: Please choose the phone model from the list.";
+    } elseif ($customer_name === '' || $contact_number === '') {
+        $message = "Error: Please enter the customer's name and mobile number.";
+    } elseif ($icloud_clean == 1) {
+        $battery_health = max(0, min(100, $battery_health));
+        if (!in_array($cosmetic_grade, ['Grade A', 'Grade B', 'Grade C'], true)) $cosmetic_grade = 'Grade A';
+        if (!in_array($screen_condition, ['Flawless', 'Minor Scratches', 'Cracked / Lines'], true)) $screen_condition = 'Flawless';
         $base_val = (float)$mat['base_market_value'];
         
         // Grade multiplier
@@ -377,17 +384,28 @@ require_once __DIR__ . '/../includes/header.php';
                                             <td><?= $app['battery_health'] ?>%</td>
                                             <td class="text-end fw-extrabold text-success"><?= format_currency($app['final_appraised_value']) ?></td>
                                             <td>
-                                                <span class="badge bg-primary-subtle text-primary border">
-                                                    <?= ucwords(str_replace('_', ' ', $app['status'])) ?>
-                                                </span>
+                                                <?php
+                                                $ap_labels = [
+                                                    'pending'             => ['Open', 'bg-primary-subtle text-primary'],
+                                                    'accepted_for_trade'  => ['Used: traded', 'bg-success-subtle text-success'],
+                                                    'accepted_for_buyout' => ['Used: bought', 'bg-success-subtle text-success'],
+                                                    'rejected'            => ['Rejected', 'bg-secondary-subtle text-secondary'],
+                                                ];
+                                                [$apl, $apc] = $ap_labels[$app['status']] ?? [ucwords(str_replace('_', ' ', $app['status'])), 'bg-light text-dark'];
+                                                ?>
+                                                <span class="badge <?= $apc ?> border"><?= $apl ?></span>
                                             </td>
                                             <td class="text-center">
-                                                <a href="<?= BASE_URL ?>admin/trading.php?appraisal_id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-primary py-0 px-2" title="Trade/Swap">
-                                                    <i class="fa-solid fa-repeat"></i>
-                                                </a>
-                                                <a href="<?= BASE_URL ?>admin/buying.php?appraisal_id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-warning text-dark py-0 px-2" title="Buyout">
-                                                    <i class="fa-solid fa-hand-holding-dollar"></i>
-                                                </a>
+                                                <?php if ($app['status'] === 'pending'): ?>
+                                                    <a href="<?= BASE_URL ?>admin/trading.php?appraisal_id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-primary py-0 px-2" title="Trade/Swap">
+                                                        <i class="fa-solid fa-repeat"></i>
+                                                    </a>
+                                                    <a href="<?= BASE_URL ?>admin/buying.php?appraisal_id=<?= $app['id'] ?>" class="btn btn-sm btn-outline-warning text-dark py-0 px-2" title="Buyout">
+                                                        <i class="fa-solid fa-hand-holding-dollar"></i>
+                                                    </a>
+                                                <?php else: ?>
+                                                    <span class="text-muted small">—</span>
+                                                <?php endif; ?>
                                             </td>
                                         </tr>
                                     <?php endforeach; ?>

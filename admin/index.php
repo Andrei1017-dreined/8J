@@ -58,6 +58,24 @@ try {
     $kpi['overdue_pickups'] = (int)$pdo->query("SELECT COUNT(*) FROM online_orders WHERE pickup_status IN ('pending_confirmation','ready_for_pickup') AND pickup_target_date < CURDATE()")->fetchColumn();
     $kpi['warranty_expiring'] = (int)$pdo->query("SELECT COUNT(*) FROM repair_job_orders WHERE status='completed' AND warranty_expiry BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 7 DAY)")->fetchColumn();
 
+    // Today's to-do counts (each links to the exact filtered list)
+    $todo = $pdo->query("SELECT
+        (SELECT COUNT(*) FROM online_orders WHERE pickup_status = 'pending_confirmation') AS pick_prep,
+        (SELECT COUNT(*) FROM online_orders WHERE pickup_status = 'ready_for_pickup') AS pick_ready,
+        (SELECT COUNT(*) FROM repair_job_orders WHERE status = 'scheduled') AS rep_booked,
+        (SELECT COUNT(*) FROM repair_job_orders WHERE status = 'scheduled' AND scheduled_date = CURDATE()) AS rep_booked_today,
+        (SELECT COUNT(*) FROM repair_job_orders WHERE status = 'ready_for_pickup') AS rep_ready,
+        (SELECT COUNT(*) FROM repair_job_orders WHERE technician_id IS NULL AND status IN ('received','diagnosing')) AS rep_unassigned,
+        (SELECT COUNT(*) FROM appraisal_records WHERE status = 'pending') AS appraisals_open")->fetch();
+
+    // Technician's own queue
+    $my_jobs = [];
+    if (has_role('technician')) {
+        $mj = $pdo->prepare("SELECT * FROM repair_job_orders WHERE technician_id = ? AND status IN ('received','diagnosing','waiting_parts','repairing') ORDER BY FIELD(status,'repairing','diagnosing','received','waiting_parts'), id LIMIT 15");
+        $mj->execute([(int)$current_user['id']]);
+        $my_jobs = $mj->fetchAll();
+    }
+
     // 7-day sales trend (fill missing days with zero)
     $trend_raw = $pdo->query("SELECT DATE(created_at) d, SUM(total_amount) t FROM sales WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 6 DAY) GROUP BY DATE(created_at)")->fetchAll(PDO::FETCH_KEY_PAIR);
     for ($i = 6; $i >= 0; $i--) {
@@ -85,20 +103,106 @@ require_once __DIR__ . '/../includes/header.php';
 
         <!-- Main Content Area -->
         <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4 py-4">
-            <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-2 pb-3 mb-3 border-bottom">
+            <?php
+            $hour = (int)date('G');
+            $greet = $hour < 12 ? 'Good morning' : ($hour < 18 ? 'Good afternoon' : 'Good evening');
+            $first_name = explode(' ', trim($current_user['fullname'] ?? ''))[0];
+            $todo = $todo ?? [];
+            $is_tech_view = has_role('technician');
+            ?>
+            <style>
+                .todo-card { display: flex; gap: 12px; align-items: center; padding: 14px 16px; border-radius: 16px; background: #fff; border: 1px solid #fce7f3; text-decoration: none; color: #2b1120; height: 100%; transition: transform .15s, box-shadow .15s, border-color .15s; }
+                .todo-card:hover { transform: translateY(-2px); box-shadow: 0 12px 26px -18px rgba(131,24,67,.45); border-color: #f9a8d4; color: #2b1120; }
+                .todo-card .n { font-size: 1.6rem; font-weight: 800; line-height: 1; min-width: 34px; }
+                .todo-card .t { font-weight: 700; font-size: .88rem; }
+                .todo-card .s { font-size: .74rem; color: #6b5563; }
+                .todo-card.hot { border-color: #f9a8d4; background: #fff5f9; }
+                .todo-card.hot .n { color: #db2777; }
+                .todo-card.calm .n { color: #a1a1aa; }
+                .quick-act { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; padding: 14px 8px; border-radius: 16px; border: 1px dashed #f9a8d4; background: rgba(255,255,255,.7); text-decoration: none; color: #831843; font-weight: 700; font-size: .8rem; text-align: center; height: 100%; transition: background .15s; }
+                .quick-act i { font-size: 1.2rem; color: #db2777; }
+                .quick-act:hover { background: #fff; color: #831843; border-style: solid; }
+            </style>
+
+            <div class="d-flex justify-content-between flex-wrap align-items-center gap-2 pt-2 pb-3 mb-3 border-bottom">
                 <div>
-                    <h2 class="h3 fw-bold mb-1">Operations Overview</h2>
-                    <p class="text-muted small mb-0">Welcome back, <?= htmlspecialchars($current_user['fullname']) ?> (<?= ucfirst($current_user['role']) ?>)</p>
-                </div>
-                <div class="btn-toolbar mb-2 mb-md-0 gap-2">
-                    <a href="<?= BASE_URL ?>admin/pos.php" class="btn btn-primary btn-sm rounded-pill px-3 shadow-sm">
-                        <i class="fa-solid fa-cash-register me-1"></i> Open POS Cashier
-                    </a>
-                    <a href="<?= BASE_URL ?>admin/appraisal.php" class="btn btn-outline-primary btn-sm rounded-pill px-3">
-                        <i class="fa-solid fa-calculator me-1"></i> New Phone Appraisal
-                    </a>
+                    <h2 class="h3 fw-bold mb-1"><?= $greet ?>, <?= htmlspecialchars($first_name ?: 'there') ?></h2>
+                    <p class="text-muted small mb-0"><?= date('l, F j') ?> · signed in as <?= ucfirst($current_user['role']) ?></p>
                 </div>
             </div>
+
+            <!-- Today's to-do: what needs doing, each card opens the exact list -->
+            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size:.72rem; letter-spacing:.08em;">To do now</h6>
+            <div class="row g-3 mb-4">
+                <?php
+                $cards = [];
+                if ($is_tech_view) {
+                    $cards[] = [count($my_jobs), 'My repair jobs', 'Assigned to you and not finished', 'repairs.php?mine=1&status=active', 'fa-screwdriver-wrench'];
+                    $cards[] = [(int)($todo['rep_unassigned'] ?? 0), 'Unassigned repairs', 'Received but no technician yet', 'repairs.php?status=received', 'fa-user-plus'];
+                    $cards[] = [(int)($todo['rep_booked'] ?? 0), 'Booked online', ($todo['rep_booked_today'] ?? 0) . ' coming in today', 'repairs.php?status=scheduled', 'fa-calendar-check'];
+                } else {
+                    $cards[] = [(int)($todo['pick_prep'] ?? 0), 'Pick-ups to prepare', 'New online reservations', 'pickups.php?view=open', 'fa-bag-shopping'];
+                    $cards[] = [(int)($todo['pick_ready'] ?? 0), 'Waiting for customer', 'Prepared, ready to release', 'pickups.php?view=open', 'fa-bell'];
+                    $cards[] = [(int)($todo['rep_booked'] ?? 0), 'Repairs booked online', ($todo['rep_booked_today'] ?? 0) . ' coming in today', 'repairs.php?status=scheduled', 'fa-calendar-check'];
+                    $cards[] = [(int)($todo['rep_ready'] ?? 0), 'Repairs ready to release', 'Customer can collect', 'repairs.php?status=ready_for_pickup', 'fa-circle-check'];
+                }
+                foreach ($cards as [$n, $title, $sub, $href, $icon]): ?>
+                    <div class="col-6 col-xl-3">
+                        <a class="todo-card <?= $n > 0 ? 'hot' : 'calm' ?>" href="<?= BASE_URL ?>admin/<?= $href ?>">
+                            <span class="n"><?= $n ?></span>
+                            <span>
+                                <span class="t d-block"><i class="fa-solid <?= $icon ?> me-1 opacity-75"></i><?= $title ?></span>
+                                <span class="s d-block"><?= $n > 0 ? htmlspecialchars($sub) : 'All clear' ?></span>
+                            </span>
+                        </a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <!-- Quick actions -->
+            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size:.72rem; letter-spacing:.08em;">Quick actions</h6>
+            <div class="row g-2 mb-4">
+                <?php
+                $actions = $is_tech_view
+                    ? [['repairs.php?open=newJobModal', 'fa-plus', 'New repair job'], ['appraisal.php', 'fa-magnifying-glass-dollar', 'Appraise a phone'], ['help.php', 'fa-circle-question', 'How-to guides']]
+                    : [['pos.php', 'fa-cash-register', 'New sale'], ['repairs.php?open=newJobModal', 'fa-screwdriver-wrench', 'New repair job'], ['appraisal.php', 'fa-magnifying-glass-dollar', 'Appraise / buy a phone'],
+                       ['inventory.php?open=addPhoneModal', 'fa-mobile-screen', 'Add phone to stock'], ['inventory.php?open=addAccessoryModal', 'fa-box-open', 'Add accessory'], ['help.php', 'fa-circle-question', 'How-to guides']];
+                foreach ($actions as [$href, $icon, $label]): ?>
+                    <div class="col-4 col-md-2">
+                        <a class="quick-act" href="<?= BASE_URL ?>admin/<?= $href ?>"><i class="fa-solid <?= $icon ?>"></i><?= $label ?></a>
+                    </div>
+                <?php endforeach; ?>
+            </div>
+
+            <?php if ($is_tech_view): ?>
+                <!-- Technician: their own queue first -->
+                <div class="card card-custom mb-4">
+                    <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                        <h6 class="fw-bold mb-0"><i class="fa-solid fa-screwdriver-wrench me-2 text-primary"></i>My repair queue</h6>
+                        <a href="<?= BASE_URL ?>admin/repairs.php?mine=1&status=active" class="btn btn-sm btn-link text-decoration-none">Open in Repairs</a>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle mb-0" style="font-size:.88rem;">
+                            <thead class="table-light"><tr><th>Job #</th><th>Device</th><th>Problem</th><th>Status</th></tr></thead>
+                            <tbody>
+                                <?php if (!$my_jobs): ?>
+                                    <tr><td colspan="4" class="text-center text-muted py-4">Nothing assigned to you right now. Check <a href="<?= BASE_URL ?>admin/repairs.php?status=received">unassigned repairs</a>.</td></tr>
+                                <?php endif; ?>
+                                <?php foreach ($my_jobs as $j): ?>
+                                    <tr>
+                                        <td class="fw-bold font-monospace"><?= htmlspecialchars($j['job_order_no']) ?></td>
+                                        <td><?= htmlspecialchars($j['device_brand'] . ' ' . $j['device_model']) ?></td>
+                                        <td class="text-truncate" style="max-width:260px;"><?= htmlspecialchars($j['reported_issues']) ?></td>
+                                        <td><span class="badge bg-primary-subtle text-primary border"><?= ucwords(str_replace('_', ' ', $j['status'])) ?></span></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            <?php endif; ?>
+
+            <h6 class="fw-bold text-uppercase text-muted mb-2" style="font-size:.72rem; letter-spacing:.08em;">At a glance</h6>
 
             <!-- Top Metric Cards -->
             <div class="row g-3 mb-4">
@@ -184,9 +288,9 @@ require_once __DIR__ . '/../includes/header.php';
                     <div class="card card-custom p-3 <?= ($kpi['overdue_pickups'] + $kpi['ready_repairs'] + $kpi['warranty_expiring']) ? 'border border-warning' : '' ?>">
                         <div class="text-muted small fw-semibold text-uppercase" style="font-size:0.68rem;">Needs Attention</div>
                         <div class="small mt-1">
-                            <a href="<?= BASE_URL ?>admin/pickups.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-clock text-danger me-1"></i><strong><?= $kpi['overdue_pickups'] ?></strong> overdue pick-ups</a>
-                            <a href="<?= BASE_URL ?>admin/repairs.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-box text-info me-1"></i><strong><?= $kpi['ready_repairs'] ?></strong> repairs awaiting claim</a>
-                            <a href="<?= BASE_URL ?>admin/repairs.php" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-shield-halved text-warning me-1"></i><strong><?= $kpi['warranty_expiring'] ?></strong> warranties expiring (7d)</a>
+                            <a href="<?= BASE_URL ?>admin/pickups.php?view=open" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-clock text-danger me-1"></i><strong><?= $kpi['overdue_pickups'] ?></strong> overdue pick-ups</a>
+                            <a href="<?= BASE_URL ?>admin/repairs.php?status=ready_for_pickup" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-box text-info me-1"></i><strong><?= $kpi['ready_repairs'] ?></strong> repairs awaiting claim</a>
+                            <a href="<?= BASE_URL ?>admin/repairs.php?status=completed" class="text-decoration-none text-dark d-block"><i class="fa-solid fa-shield-halved text-warning me-1"></i><strong><?= $kpi['warranty_expiring'] ?></strong> warranties expiring (7d)</a>
                         </div>
                     </div>
                 </div>
@@ -251,6 +355,7 @@ require_once __DIR__ . '/../includes/header.php';
 
             <!-- Two Column Table Views -->
             <div class="row g-4">
+                <?php if (!$is_tech_view): ?>
                 <!-- Recent POS Sales -->
                 <div class="col-lg-6">
                     <div class="card card-custom h-100">
@@ -299,8 +404,9 @@ require_once __DIR__ . '/../includes/header.php';
                     </div>
                 </div>
 
+                <?php endif; ?>
                 <!-- Recent Repair Orders -->
-                <div class="col-lg-6">
+                <div class="<?= $is_tech_view ? 'col-12' : 'col-lg-6' ?>">
                     <div class="card card-custom h-100">
                         <div class="card-header bg-white py-3 border-bottom d-flex justify-content-between align-items-center">
                             <h6 class="fw-bold mb-0"><i class="fa-solid fa-wrench me-2 text-warning"></i>Recent Repair Job Orders</h6>
@@ -325,9 +431,16 @@ require_once __DIR__ . '/../includes/header.php';
                                                     <td><?= htmlspecialchars($rep['device_brand'] . ' ' . $rep['device_model']) ?></td>
                                                     <td class="text-truncate" style="max-width: 140px;"><?= htmlspecialchars($rep['reported_issues']) ?></td>
                                                     <td>
-                                                        <span class="badge bg-primary-subtle text-primary border">
-                                                            <?= ucwords(str_replace('_', ' ', $rep['status'])) ?>
-                                                        </span>
+                                                        <?php
+                                                        $rep_badge = [
+                                                            'scheduled' => 'bg-info-subtle text-info', 'received' => 'bg-secondary-subtle text-secondary',
+                                                            'diagnosing' => 'bg-warning-subtle text-warning', 'waiting_parts' => 'bg-danger-subtle text-danger',
+                                                            'repairing' => 'bg-primary-subtle text-primary', 'ready_for_pickup' => 'bg-success-subtle text-success',
+                                                            'completed' => 'bg-success text-white', 'unrepairable' => 'bg-dark-subtle text-dark', 'cancelled' => 'bg-light text-muted',
+                                                        ][$rep['status']] ?? 'bg-light text-dark';
+                                                        $rep_label = ['scheduled' => 'Booked', 'completed' => 'Released', 'ready_for_pickup' => 'Ready for pick-up'][$rep['status']] ?? ucwords(str_replace('_', ' ', $rep['status']));
+                                                        ?>
+                                                        <span class="badge <?= $rep_badge ?> border"><?= $rep_label ?></span>
                                                     </td>
                                                 </tr>
                                             <?php endforeach; ?>

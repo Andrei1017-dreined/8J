@@ -7,7 +7,8 @@ $message = '';
 $prefill_appraisal_id = (int)($_GET['appraisal_id'] ?? 0);
 
 // Fetch pending appraisals
-$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_buyout') ORDER BY id DESC")->fetchAll();
+// Only appraisals that haven't been used yet (a completed buyout/trade moves them out of 'pending')
+$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status = 'pending' ORDER BY id DESC")->fetchAll();
 
 // Handle Buyout Execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'execute_buyout') {
@@ -17,17 +18,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
     $seller_address = sanitize($_POST['seller_address'] ?? '');
     $valid_id_type = sanitize($_POST['valid_id_type'] ?? '');
     $valid_id_number = sanitize($_POST['valid_id_number'] ?? '');
-    $payment_method = sanitize($_POST['payment_method'] ?? 'cash');
+    $payment_method = in_array($_POST['payment_method'] ?? '', ['cash', 'gcash', 'bank_transfer'], true) ? $_POST['payment_method'] : 'cash';
     $anti_fencing_agreed = isset($_POST['anti_fencing_agreed']) ? 1 : 0;
 
     if ($anti_fencing_agreed !== 1) {
         $message = "Error: Anti-Fencing legal declaration must be acknowledged by the seller.";
+    } elseif ($seller_name === '' || $seller_address === '' || $valid_id_type === '' || $valid_id_number === '') {
+        // P.D. 1612 record-keeping: the seller's identity and address must be on file
+        $message = "Error: Seller name, address, ID type and ID number are all required for a buyout.";
+    } elseif (!preg_match('/^(09\d{9}|\+639\d{9})$/', preg_replace('/[\s-]/', '', $seller_contact))) {
+        $message = "Error: Please enter the seller's 11-digit mobile number.";
     } else {
         try {
             $pdo->beginTransaction();
 
-            // 1. Fetch appraisal
-            $stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE id = ? FOR UPDATE");
+            // 1. Fetch appraisal (must still be unused, so the same phone can't be paid out twice)
+            $stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE id = ? AND status = 'pending' FOR UPDATE");
             $stmt->execute([$appraisal_id]);
             $app = $stmt->fetch();
 
@@ -73,11 +79,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
                 $message = "Unit buyout processed successfully! Transaction No: " . $trans_no . ". Phone is now in stock.";
             } else {
                 $pdo->rollBack();
-                $message = "Error: Invalid appraisal record selected.";
+                $message = "Error: That appraisal was already used for a buyout or trade. Create a new appraisal first.";
             }
         } catch (Exception $e) {
             if ($pdo->inTransaction()) $pdo->rollBack();
-            $message = "Buyout processing error: " . $e->getMessage();
+            error_log('Buyout error: ' . $e->getMessage());
+            $message = ($e instanceof PDOException && $e->getCode() == 23000)
+                ? "Error: A phone with this IMEI is already in inventory. Check the appraisal's IMEI."
+                : "Error: The buyout could not be saved. No payment was recorded.";
         }
     }
 }

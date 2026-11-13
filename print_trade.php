@@ -3,7 +3,7 @@
  * 8J Cellphone Accessories - Smartphone Trade-In / Swap Agreement Slip
  */
 require_once __DIR__ . '/config/db.php';
-require_login();
+require_role('admin', 'staff');
 
 $trade_id = (int)($_GET['id'] ?? 0);
 $trade_code = sanitize($_GET['code'] ?? '');

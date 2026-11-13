@@ -10,7 +10,8 @@ $prefill_appraisal_id = (int)($_GET['appraisal_id'] ?? 0);
 $available_shop_units = $pdo->query("SELECT * FROM phone_units WHERE status = 'in_stock' ORDER BY brand, model_name")->fetchAll();
 
 // Fetch pending or eligible appraisals
-$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status IN ('pending', 'accepted_for_trade') ORDER BY id DESC")->fetchAll();
+// Only appraisals that haven't been used yet (a completed trade/buyout moves them out of 'pending')
+$eligible_appraisals = $pdo->query("SELECT * FROM appraisal_records WHERE status = 'pending' ORDER BY id DESC")->fetchAll();
 
 // Handle Swap Execution
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'execute_trade') {
@@ -23,7 +24,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
         $pdo->beginTransaction();
 
         // 1. Fetch appraisal
-        $stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE id = ? FOR UPDATE");
+        // Must still be unused: stops the same trade-in being credited twice
+        $stmt = $pdo->prepare("SELECT * FROM appraisal_records WHERE id = ? AND status = 'pending' FOR UPDATE");
         $stmt->execute([$appraisal_id]);
         $app = $stmt->fetch();
 
@@ -83,11 +85,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['
             $message = "Phone trade completed successfully! Transaction Reference: " . $trade_code;
         } else {
             $pdo->rollBack();
-            $message = "Error: Invalid appraisal record or target shop phone is no longer in stock.";
+            $message = "Error: That appraisal was already used for a trade or buyout, or the shop phone is no longer in stock.";
         }
     } catch (Exception $e) {
         if ($pdo->inTransaction()) $pdo->rollBack();
-        $message = "Trade processing error: " . $e->getMessage();
+        error_log('Trade error: ' . $e->getMessage());
+        $message = ($e instanceof PDOException && $e->getCode() == 23000)
+            ? "Error: A phone with this IMEI is already in inventory. Check the appraisal's IMEI."
+            : "Error: The trade could not be saved. Nothing was changed.";
     }
 }
 
